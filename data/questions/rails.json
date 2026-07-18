@@ -1,0 +1,198 @@
+[
+  {
+    "id": "rb-001",
+    "topic": "rails",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "What is the value of `a` at the end?",
+    "code": "a = nil\na ||= 5\na ||= 10\na",
+    "lang": "ruby",
+    "answers": ["5"],
+    "placeholder": "a number",
+    "explanation": "`a ||= x` means `a = a || x` — assign only if `a` is currently falsy (nil or false). The first `||=` sets `a` to 5. The second sees `a` is already 5 (truthy), so it's a no-op."
+  },
+  {
+    "id": "rb-002",
+    "topic": "rails",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "What does this expression evaluate to?",
+    "code": "result = 0 ? \"truthy\" : \"falsy\"\nresult",
+    "lang": "ruby",
+    "answers": ["truthy"],
+    "placeholder": "truthy or falsy",
+    "explanation": "In Ruby the ONLY falsy values are `nil` and `false`. Everything else — including `0`, `\"\"`, and `[]` — is truthy. This trips up people coming from JavaScript, where `0` and `\"\"` are falsy."
+  },
+  {
+    "id": "rb-003",
+    "topic": "rails",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "What does this return?",
+    "code": "[1, 2, 3].map(&:to_s)",
+    "lang": "ruby",
+    "answers": ["[\"1\", \"2\", \"3\"]", "[\"1\",\"2\",\"3\"]"],
+    "placeholder": "an array",
+    "explanation": "`&:to_s` converts the symbol `:to_s` into a block equivalent to `{ |x| x.to_s }`. So each element has `to_s` called on it, producing string versions. `&:method` is the standard Ruby shorthand for 'call this method on each element'."
+  },
+  {
+    "id": "rb-004",
+    "topic": "rails",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What is `result`?",
+    "code": "result = [1, 2, 3].each { |n| n * 2 }\nresult",
+    "lang": "ruby",
+    "answers": ["[1, 2, 3]", "[1,2,3]"],
+    "placeholder": "an array",
+    "explanation": "`each` runs the block for side effects and returns the ORIGINAL receiver — it ignores the block's return value. To collect the transformed values `[2, 4, 6]` you'd use `map`. Confusing `each` with `map` is a very common bug."
+  },
+  {
+    "id": "rb-005",
+    "topic": "rails",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What does the final line output?",
+    "code": "s = \"hello\"\ns.upcase\ns",
+    "lang": "ruby",
+    "answers": ["hello"],
+    "placeholder": "a string",
+    "explanation": "`upcase` returns a NEW upcased string and leaves `s` unchanged, so `s` is still \"hello\". The bang version `upcase!` mutates the string in place. By convention a trailing `!` marks the mutating (or more dangerous) variant of a method."
+  },
+  {
+    "id": "rb-006",
+    "topic": "rails",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What does `wrap { \"hi\" }` return?",
+    "code": "def wrap\n  \"[#{yield}]\"\nend\n\nwrap { \"hi\" }",
+    "lang": "ruby",
+    "answers": ["[hi]"],
+    "placeholder": "a string",
+    "explanation": "`yield` calls the block passed to the method and evaluates to the block's return value (`\"hi\"`), which is interpolated into the string to give `\"[hi]\"`. Blocks are Ruby's core mechanism for passing behavior into methods (think `.each`, `.map`, `.times`)."
+  },
+  {
+    "id": "rb-007",
+    "topic": "rails",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "A `Doctor` sees many `Patient`s and vice-versa, and each visit (an `Appointment`) also stores a date. Which ActiveRecord setup models this best?",
+    "choices": [
+      "`has_many :appointments` and `has_many :patients, through: :appointments`",
+      "`has_and_belongs_to_many :patients` with no join model",
+      "`Doctor belongs_to :patients`",
+      "`Doctor has_many :patients` directly with no join table"
+    ],
+    "answer": 0,
+    "explanation": "A many-to-many that carries its own data (the appointment date) needs an explicit join model. `has_many :through` routes the `patients` association through the `appointments` records. `has_and_belongs_to_many` uses a bare join table with no model, so it can't hold extra attributes."
+  },
+  {
+    "id": "rb-008",
+    "topic": "rails",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Given `validates :email, presence: true, uniqueness: true`, when does the check run and what happens when it fails on `user.save`?",
+    "choices": [
+      "It runs in the save lifecycle; on failure `save` aborts, returns `false`, and messages are added to `user.errors`",
+      "It runs at migration time and adds a database constraint",
+      "It runs only when you manually call `valid?`, never during save",
+      "It raises an exception that crashes the request"
+    ],
+    "answer": 0,
+    "explanation": "Model validations run automatically on `save`/`create`/`update` (wrapped by callbacks like `before_validation`/`before_save`). If any fail, the record isn't persisted, `save` returns `false`, and errors collect in `record.errors`. `save!` is the variant that raises `RecordInvalid` instead of returning false."
+  },
+  {
+    "id": "rb-009",
+    "topic": "rails",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "What does `scope :active, -> { where(active: true) }` give you on a model?",
+    "choices": [
+      "A chainable class-level query method (`User.active.order(:name)`) that returns an ActiveRecord relation",
+      "An instance method that returns a boolean",
+      "A database view created at migration time",
+      "A validation that rejects inactive users"
+    ],
+    "answer": 0,
+    "explanation": "Scopes are named, composable query fragments defined with a lambda. They return a relation (never `nil`), so they chain cleanly with other scopes and query methods. They're just sugar over a class method that returns `where(...)`."
+  },
+  {
+    "id": "rb-010",
+    "topic": "rails",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "`Post.includes(:comments)` sometimes runs 2 separate queries (preload) and sometimes 1 LEFT JOIN (eager_load). What makes Rails choose the single-JOIN form?",
+    "choices": [
+      "Referencing the association in a `where`/`order` (e.g. `where('comments.spam = ?', false)` or `.references(:comments)`) forces `eager_load`",
+      "Nothing — `includes` always emits exactly one query",
+      "Adding a database index on `comments.post_id`",
+      "Using `find` instead of `all`"
+    ],
+    "answer": 0,
+    "explanation": "`includes` is a hint: by default it uses `preload` (a second query with `WHERE post_id IN (...)`). But if you filter or sort on the included table, Rails must join, so it switches to `eager_load` (a LEFT OUTER JOIN) — which you can force with `.references`. Either way, `includes` is the standard cure for N+1 queries."
+  },
+  {
+    "id": "rb-011",
+    "topic": "rails",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "In a controller, what does `params.require(:user).permit(:name, :email)` (strong parameters) accomplish?",
+    "choices": [
+      "It whitelists which attributes mass-assignment may set, blocking users from setting arbitrary/protected columns",
+      "It validates the format and types of the submitted values",
+      "It encrypts the parameters before they reach the model",
+      "It runs the model's database validations early"
+    ],
+    "answer": 0,
+    "explanation": "Strong parameters guard mass assignment: `require` ensures the `:user` key is present, and `permit` lists exactly which attributes may pass to `User.new`/`update`. Without it a malicious form could set fields like `admin: true`. It's about authorization of attributes, not validation or encryption."
+  },
+  {
+    "id": "rb-012",
+    "topic": "rails",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "How do `find`, `find_by`, and `where` differ when a record isn't found?",
+    "choices": [
+      "`find(1)` looks up by primary key and raises `RecordNotFound`; `find_by(email: x)` returns the first match or `nil`; `where(...)` returns a (possibly empty) relation",
+      "All three raise `RecordNotFound` when nothing matches",
+      "All three return an array of records",
+      "`find_by` can only search by `id`, just like `find`"
+    ],
+    "answer": 0,
+    "explanation": "`find` fetches by primary key and RAISES if it's missing (great for show pages that should 404). `find_by` runs an arbitrary condition and returns the first row or `nil`. `where` builds a lazy relation you can chain and enumerate; if nothing matches it's simply empty, not nil."
+  },
+  {
+    "id": "rb-013",
+    "topic": "rails",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "`resources :posts` generates Rails' 7 RESTful actions. Which list names them?",
+    "choices": [
+      "index, show, new, create, edit, update, destroy",
+      "get, post, put, patch, delete, head, options",
+      "index, list, add, remove, edit, save, view",
+      "create, read, update, delete"
+    ],
+    "answer": 0,
+    "explanation": "The 7 conventional controller actions map routes (HTTP verb + path) to CRUD: `index`/`show` (read), `new`+`create` and `edit`+`update` (the form pairs), and `destroy` (delete). Routing sends the request to the matching controller action (C), which uses models (M) and renders a view (V) — the MVC split."
+  },
+  {
+    "id": "rb-014",
+    "topic": "rails",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Omada and Instructure pair on Rails with a TDD workflow. Walk through the red-green-refactor loop and describe what a good RSpec example looks like.",
+    "reveal": {
+      "answer": "TDD drives design through tests: write a small failing test that specifies the next behavior (RED), write the minimum code to make it pass (GREEN), then clean up the implementation with the tests as a safety net (REFACTOR), and repeat in tight loops. In RSpec you group behavior with `describe`/`context` and state one expectation per `it` block using `expect(...).to`. Tests should assert observable behavior and outcomes, not internal implementation details, so they stay meaningful through refactors.",
+      "points": [
+        "Red → Green → Refactor: failing test first, minimal code to pass, then clean up under green tests",
+        "RSpec structure: `describe`/`context` groups, focused `it` examples, `expect(x).to eq(...)` / `change`/`raise_error`",
+        "Arrange-Act-Assert; use factories (FactoryBot) or fixtures for setup",
+        "Test behavior and public interfaces, not private methods or incidental implementation",
+        "Fast unit tests for models/services; sparing request/system specs for integration",
+        "In a pairing loop: narrate your intent, let the failing test define 'done', keep steps small"
+      ],
+      "trap": "A weak answer writes tests after the code just to hit coverage, or asserts on private methods and internal state so every refactor breaks the suite. Another red flag: one giant `it` with ten unrelated expectations."
+    }
+  }
+]

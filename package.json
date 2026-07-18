@@ -1,0 +1,12 @@
+{
+  "name": "dryrun",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Duolingo-style coding-interview practice app",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.mjs",
+    "validate": "node tools/validate.js",
+    "start": "python3 -m http.server 8000"
+  }
+}

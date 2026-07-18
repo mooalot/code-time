@@ -1,0 +1,204 @@
+[
+  {
+    "id": "css-001",
+    "topic": "frontend-css",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "An element is `<h1 id=\"title\" class=\"heading\">`. Both rules below apply. What color is the text?",
+    "code": "#title  { color: blue; }\n.heading { color: red !important; }",
+    "lang": "css",
+    "choices": [
+      "red — an `!important` declaration wins over a normal one regardless of specificity",
+      "blue — the ID selector `#title` has higher specificity, and specificity always wins",
+      "blue — it is written first, and the first matching rule wins",
+      "red — the class selector is more specific than the ID"
+    ],
+    "answer": 0,
+    "explanation": "The cascade resolves conflicts by origin/importance *first*, then specificity, then source order. `!important` bumps a declaration into a higher-priority band, so `red` beats `blue` even though `#title` (1,0,0) out-specifies `.heading` (0,1,0). Specificity only breaks ties *within* the same importance band — which is exactly why chasing bugs with `!important` is discouraged."
+  },
+  {
+    "id": "css-002",
+    "topic": "frontend-css",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Two rules target the same `<a class=\"item\">` inside the markup. Which color wins?",
+    "code": "#sidebar .item        { color: blue; }\n.list .item.active    { color: red; }",
+    "lang": "css",
+    "choices": [
+      "blue — `#sidebar .item` is (1,1,0); one ID outranks the three classes of `.list .item.active` (0,3,0)",
+      "red — it has three classes, and more selectors always mean higher specificity",
+      "red — it comes later in the source, and later rules win",
+      "blue — element selectors count more than class selectors"
+    ],
+    "answer": 0,
+    "explanation": "Specificity is a tuple (IDs, classes, elements) compared left-to-right. `#sidebar .item` = (1,1,0); `.list .item.active` = (0,3,0). The ID column decides it immediately: 1 > 0, so blue wins and the class count never even gets compared. A single ID beats *any* number of classes."
+  },
+  {
+    "id": "css-003",
+    "topic": "frontend-css",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "With the default `content-box` sizing, what is the element's total rendered width (the space it occupies horizontally)?",
+    "code": ".card {\n  box-sizing: content-box;\n  width: 300px;\n  padding: 20px;\n  border: 10px solid black;\n}",
+    "lang": "css",
+    "answers": ["360px", "360"],
+    "placeholder": "e.g. 320px",
+    "explanation": "With `content-box` (the default), `width` sizes only the content area; padding and border are added on top. Total = 300 + (20+20) padding + (10+10) border = 360px. Switching to `box-sizing: border-box` would instead make `width` include padding and border, keeping the box at 300px — which is why most resets set `border-box` globally."
+  },
+  {
+    "id": "css-004",
+    "topic": "frontend-css",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "You need to lay out a page with rows *and* columns that align to each other in both directions (a true 2D grid). Flexbox or Grid?",
+    "choices": [
+      "CSS Grid — it is a 2D system that controls rows and columns together",
+      "Flexbox — it handles rows and columns simultaneously just as well",
+      "Flexbox — Grid can only create single columns",
+      "Neither; you must use floats for 2D layouts"
+    ],
+    "answer": 0,
+    "explanation": "Flexbox is a *1D* system: it lays items along a single axis (a row OR a column) and is ideal for toolbars, nav bars, and distributing space among items. Grid is *2D*: it defines rows and columns simultaneously so cells align in both directions — ideal for page-level layouts and card galleries. Rule of thumb: content-driven single-axis → flex; layout-driven two-axis → grid."
+  },
+  {
+    "id": "css-005",
+    "topic": "frontend-css",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "A container has `display: flex;` with the default `flex-direction: row`. Which declarations center its children both horizontally and vertically?",
+    "choices": [
+      "`justify-content: center; align-items: center;` — main axis (horizontal) then cross axis (vertical)",
+      "`align-items: center; justify-content: center;` — `align-items` is horizontal, `justify-content` is vertical",
+      "`text-align: center; vertical-align: middle;`",
+      "`justify-items: center; align-content: center;`"
+    ],
+    "answer": 0,
+    "explanation": "In a flex row the *main axis* runs horizontally, so `justify-content` positions items horizontally; the *cross axis* runs vertically, so `align-items` positions them vertically. Center both with `justify-content: center; align-items: center;`. Note the mapping flips if you set `flex-direction: column` — then `justify-content` becomes vertical. (`flex: 1` on a child, meanwhile, tells it to grow and share leftover main-axis space.)"
+  },
+  {
+    "id": "css-006",
+    "topic": "frontend-css",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "An element has `position: absolute; top: 0; left: 0;`. Relative to what is it positioned?",
+    "choices": [
+      "The nearest ancestor that is itself positioned (`relative`/`absolute`/`fixed`/`sticky`); if none exists, the initial containing block (viewport)",
+      "Always the browser viewport, ignoring all ancestors",
+      "Its direct parent element, whatever that parent's `position` is",
+      "The `<body>` element, always"
+    ],
+    "answer": 0,
+    "explanation": "An absolutely-positioned element is offset from its *containing block* — the nearest ancestor whose `position` is anything other than `static`. That is why the common pattern is `position: relative` on the parent to \"trap\" an absolute child. Contrast: `fixed` is relative to the viewport, `sticky` acts like `relative` until a scroll threshold then sticks like `fixed` within its scroll container, and `static` (the default) ignores `top`/`left`."
+  },
+  {
+    "id": "css-007",
+    "topic": "frontend-css",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "`.child` has `z-index: 9999` yet still renders *behind* `.other`. Why?",
+    "code": ".parent { position: relative; z-index: 1; opacity: 0.99; }\n.child  { position: relative; z-index: 9999; }  /* inside .parent */\n.other  { position: relative; z-index: 2; }        /* sibling of .parent */",
+    "lang": "css",
+    "choices": [
+      "`opacity < 1` makes `.parent` a stacking context, so `.child`'s z-index only competes inside `.parent` — and `.parent` (z-index 1) sits below `.other` (z-index 2)",
+      "z-index values above 9999 are clamped by the browser to a lower number",
+      "`.child` needs `position: absolute` for z-index to take effect at all",
+      "Sibling elements always paint on top of nested elements regardless of z-index"
+    ],
+    "answer": 0,
+    "explanation": "`opacity` less than 1 (like `transform`, `filter`, `will-change`, etc.) creates a new stacking context on `.parent`. A child's z-index is only meaningful *within* its own stacking context; the whole `.parent` subtree is then stacked as a unit at `.parent`'s level. Since `.parent` (z-index 1) is below `.other` (z-index 2), no z-index on `.child` can lift it above `.other`. The fix is to raise `.parent`'s z-index or remove what created the context."
+  },
+  {
+    "id": "css-008",
+    "topic": "frontend-css",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "What is the most robust modern way to center a fixed-size box both horizontally and vertically inside its parent?",
+    "choices": [
+      "Give the parent `display: grid; place-items: center;` (or flex with `justify-content`/`align-items: center`)",
+      "`margin: 0 auto;` on the box",
+      "`text-align: center;` on the parent",
+      "`vertical-align: middle;` on the box"
+    ],
+    "answer": 0,
+    "explanation": "`display: grid; place-items: center` (or `display: flex; justify-content: center; align-items: center`) centers on both axes without knowing the box's dimensions. The classic gotchas: `margin: 0 auto` only centers horizontally and needs a set width; `text-align: center` only affects *inline* content, not the block itself; `vertical-align: middle` only works on inline/table-cell contexts. Flex/grid superseded all the old translate/absolute hacks."
+  },
+  {
+    "id": "css-009",
+    "topic": "frontend-css",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "`em` is relative to the parent's font size and compounds when nested. What is the computed `font-size` of `.inner`?",
+    "code": "body   { font-size: 16px; }\n.outer { font-size: 1.5em; }   /* child of body */\n.inner { font-size: 1.5em; }   /* child of .outer */",
+    "lang": "css",
+    "answers": ["36px", "36"],
+    "placeholder": "e.g. 24px",
+    "explanation": "`em` resolves against the *parent's* computed font-size, so it compounds through nesting. `.outer` = 16 x 1.5 = 24px; `.inner` = 24 x 1.5 = 36px. This compounding is the classic `em` trap — `rem` avoids it because it is always relative to the *root* (`<html>`) font size, so `1.5rem` would be 24px at every nesting depth."
+  },
+  {
+    "id": "css-010",
+    "topic": "frontend-css",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "You are writing CSS mobile-first. Which media-query pattern fits that approach?",
+    "choices": [
+      "Write base styles for small screens, then layer enhancements with `@media (min-width: 768px) { ... }` for larger screens",
+      "Write base styles for desktop, then override with `@media (min-width: 768px)` for phones",
+      "Use only `@media (max-width: 768px)` and never write base styles",
+      "Mobile-first means avoiding media queries entirely"
+    ],
+    "answer": 0,
+    "explanation": "Mobile-first means the default (unqualified) styles target the smallest screen, and you progressively *add* complexity for wider viewports using `min-width` queries. `min-width: 768px` applies at 768px **and up**; `max-width: 768px` applies at 768px **and down**. Building up with `min-width` keeps the base lightweight and tends to produce simpler, less-overridden CSS than a desktop-first `max-width` cascade."
+  },
+  {
+    "id": "css-011",
+    "topic": "frontend-css",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "What does the selector `h2 + p` match?",
+    "choices": [
+      "The first `<p>` that immediately follows an `<h2>` (adjacent-sibling combinator)",
+      "Every `<p>` that appears anywhere after an `<h2>` (that is what `+` means)",
+      "Every `<p>` nested inside an `<h2>`",
+      "Any `<p>` that is a direct child of an `<h2>`"
+    ],
+    "answer": 0,
+    "explanation": "`+` is the adjacent-sibling combinator: it matches the element that is the very next sibling. Contrast the family: `>` = direct child (`ul > li`), `~` = *any* later sibling (general sibling), a space = any descendant at any depth, `:nth-child(2n)` = structural position (even children), and `::before`/`::after` = generated pseudo-elements (two colons) versus state pseudo-classes like `:hover` (one colon)."
+  },
+  {
+    "id": "css-012",
+    "topic": "frontend-css",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "A teammate builds a clickable control as `<div class=\"btn\" onclick=\"submit()\">Save</div>` and asks whether to add `role=\"button\"` to make it accessible. Best guidance?",
+    "choices": [
+      "Use a native `<button>` instead — the first rule of ARIA is to prefer a native element, which gives focusability, Enter/Space activation, and the button role for free",
+      "Yes — adding `role=\"button\"` alone fully makes the div accessible",
+      "Add `role=\"button\"` and `aria-label` and it will be keyboard-operable automatically",
+      "Divs can never be made accessible, so the click handler should be removed"
+    ],
+    "answer": 0,
+    "explanation": "The first rule of ARIA: don't use ARIA if a native element already conveys the semantics and behavior. A `<button>` is focusable, fires on Enter/Space, and is announced as a button — none of which a `<div onclick>` does. Retrofitting the div correctly would require `role=\"button\"` **plus** `tabindex=\"0\"` **plus** manual key handlers for Enter/Space — reinventing what `<button>` gives you for free, and easy to get wrong."
+  },
+  {
+    "id": "css-013",
+    "topic": "frontend-css",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Walk through how you would make a *custom* component accessible — either a custom dropdown/select (listbox) or a modal dialog. What must you handle beyond the visuals?",
+    "reveal": {
+      "answer": "Accessibility for a custom widget means replicating the semantics, keyboard behavior, and focus handling that a native control would provide. You expose roles/state via ARIA, drive it entirely from the keyboard, and manage focus deliberately — because a purely mouse/visual implementation is invisible and unusable to screen-reader and keyboard users.",
+      "points": [
+        "Native first: if a plain `<select>`, `<details>`, or `<dialog>` works, use it and skip most of this. Only hand-roll when design truly requires it.",
+        "Roles & state (dropdown): trigger button with `aria-haspopup=\"listbox\"` and `aria-expanded`; the popup as `role=\"listbox\"` with `role=\"option\"` children and `aria-selected` on the active option; link them with `aria-activedescendant` or roving `tabindex`.",
+        "Roles & state (modal): `role=\"dialog\"` + `aria-modal=\"true\"`, labelled by its heading via `aria-labelledby` (and `aria-describedby` for body text).",
+        "Keyboard operability: open/close and choose with Enter/Space; Arrow keys move through options; Home/End jump; type-ahead for lists; **Escape** closes. Every mouse action needs a key equivalent.",
+        "Focus management: move focus into the dialog/list on open, **trap** focus inside (Tab/Shift+Tab cycle within, don't leak to the page behind), and **return focus** to the trigger on close.",
+        "Inert background: hide the rest of the page from AT while a modal is open (`inert` attribute or `aria-hidden` on siblings) so screen readers can't wander behind it.",
+        "Visible focus indicator: never remove focus outlines without replacing them — keyboard users must see where they are (`:focus-visible`).",
+        "Announcements: use an `aria-live` region for dynamic status (e.g. 'no results', 'item added') so changes are spoken without moving focus.",
+        "Also: sufficient color contrast (WCAG AA ~4.5:1 for text), meaningful `alt` text on any image content, and don't convey state by color alone."
+      ],
+      "trap": "A weak answer stops at ARIA roles and thinks sprinkling `aria-*` attributes is enough. ARIA changes what's *announced* but adds **zero** behavior — without keyboard handlers, focus trapping, focus return, and Escape-to-close, the widget is still broken for real users. ARIA is a promise you must implement, not a fix."
+    }
+  }
+]

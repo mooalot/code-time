@@ -1,0 +1,188 @@
+[
+  {
+    "id": "gop-001",
+    "topic": "go-python",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What does this Go program print?",
+    "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfor i := 0; i < 3; i++ {\n\t\tdefer fmt.Println(i)\n\t}\n}",
+    "lang": "go",
+    "answers": ["2\n1\n0", "2 1 0", "210"],
+    "placeholder": "one value per line",
+    "explanation": "`defer` calls run in LIFO order (a stack) when the function returns, and each deferred call's ARGUMENTS are evaluated at the moment `defer` runs — not at return. So `fmt.Println` captures i = 0, 1, 2 as the loop runs, then unwinds last-in-first-out: 2, then 1, then 0."
+  },
+  {
+    "id": "gop-002",
+    "topic": "go-python",
+    "tier": 3,
+    "type": "predict",
+    "prompt": "What does `fmt.Println(a)` print? (the append/shared-backing-array gotcha)",
+    "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\ta := []int{1, 2, 3}\n\tb := a[:2]\n\tb = append(b, 99)\n\tfmt.Println(a)\n}",
+    "lang": "go",
+    "answers": ["[1 2 99]", "[1,2,99]", "[1, 2, 99]"],
+    "explanation": "`b := a[:2]` shares `a`'s backing array: b has len 2 but cap 3. `append(b, 99)` sees spare capacity, so it writes 99 into the existing backing array at index 2 instead of allocating — clobbering a[2]. Result: a becomes `[1 2 99]`. If cap had been exceeded, append would allocate a new array and `a` would be untouched. Use a full-slice expression `a[:2:2]` to force a copy."
+  },
+  {
+    "id": "gop-003",
+    "topic": "go-python",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "What does this print? (zero values and a nil map)",
+    "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tvar m map[string]int\n\tfmt.Println(m[\"missing\"], len(m))\n}",
+    "lang": "go",
+    "answers": ["0 0"],
+    "explanation": "A `var m map[string]int` is nil (its zero value). READING a nil map is safe and returns the value type's zero value (`0` for int) plus `len` 0. WRITING to a nil map panics — you must `make` it first. Same asymmetry appears with nil slices: you can `len`/`range`/`append` a nil slice, but indexing past its length panics."
+  },
+  {
+    "id": "gop-004",
+    "topic": "go-python",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "In Go, how does a type satisfy an interface?",
+    "choices": [
+      "Automatically — if it has all of the interface's methods, it satisfies it, with no `implements` keyword",
+      "It must declare `implements InterfaceName` in its definition",
+      "It must embed the interface as a field",
+      "It must be registered with the interface at program startup"
+    ],
+    "answer": 0,
+    "lang": "go",
+    "explanation": "Go uses implicit (structural) interface satisfaction: any type whose method set includes every method of the interface satisfies it, no declaration required. This decouples packages — you can define a small interface in the CONSUMER and any existing type that fits will satisfy it, which is why idiomatic Go favors tiny interfaces like `io.Reader`."
+  },
+  {
+    "id": "gop-005",
+    "topic": "go-python",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "What's the idiomatic way to handle a recoverable error in Go?",
+    "choices": [
+      "Return an `error` value alongside the result and check `if err != nil` at the call site",
+      "Wrap the call in `try { ... } catch (err) { ... }`",
+      "Use `panic`/`recover` for all error conditions",
+      "Set and read a global `errno`-style variable"
+    ],
+    "answer": 0,
+    "lang": "go",
+    "explanation": "Go has no exceptions for ordinary errors. Functions return `(result, error)` and the caller checks explicitly — errors are plain values you can wrap (`fmt.Errorf(\"...: %w\", err)`), inspect (`errors.Is`/`errors.As`), and pass around. `panic`/`recover` is reserved for truly unrecoverable, programmer-error situations, not routine failure handling."
+  },
+  {
+    "id": "gop-006",
+    "topic": "go-python",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What does this print? (buffered channel + `range` + `close`)",
+    "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tch := make(chan int, 3)\n\tfor i := 1; i <= 3; i++ {\n\t\tch <- i\n\t}\n\tclose(ch)\n\n\tsum := 0\n\tfor v := range ch {\n\t\tsum += v\n\t}\n\tfmt.Println(sum)\n}",
+    "lang": "go",
+    "answers": ["6"],
+    "explanation": "A buffered channel of cap 3 holds 1, 2, 3 without blocking. `range ch` keeps receiving until the channel is CLOSED and drained, so it yields 1, 2, 3 (sum 6) then stops. This is why you `range` a channel: it's the clean way to consume every value until close. Ranging over an unclosed, empty channel would block forever (deadlock)."
+  },
+  {
+    "id": "gop-007",
+    "topic": "go-python",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "In a Go `select`, what happens when more than one case is ready at the same time?",
+    "choices": [
+      "One ready case is chosen uniformly at random",
+      "The first case in source order always wins",
+      "All ready cases execute in order",
+      "It panics because the choice is ambiguous"
+    ],
+    "answer": 0,
+    "lang": "go",
+    "explanation": "`select` blocks until at least one case can proceed; if several are ready it picks one uniformly at random (preventing starvation and accidental ordering dependence). A `default` case makes the whole `select` non-blocking. `select` is how you multiplex channels, add timeouts (`case <-time.After(...)`), or handle cancellation (`case <-ctx.Done()`)."
+  },
+  {
+    "id": "gop-008",
+    "topic": "go-python",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "When would you reach for a `sync.Mutex` versus a channel to coordinate goroutines?",
+    "lang": "go",
+    "reveal": {
+      "points": [
+        "Mutex = protect shared state. Use it to guard a critical section (a struct field, a map, a counter) where goroutines read/write the same memory and you just need mutual exclusion. It's cheaper and simpler for that.",
+        "Channel = transfer data / signal. 'Share memory by communicating' — use channels for pipelines, work distribution, hand-off of ownership, and signaling completion or cancellation.",
+        "Rule of thumb: mutex for state, channel for coordination and hand-off. Don't hand-roll a queue with a mutex + slice when a buffered channel expresses it directly; don't wrap a simple counter in a channel when `sync.Mutex` (or `atomic`) is clearer.",
+        "Depth signals: `sync.RWMutex` for read-heavy state, `atomic` for a lone counter, and never copy a `Mutex` after first use. Know both can deadlock — unbuffered channels with no receiver, or mutexes acquired in inconsistent order."
+      ],
+      "trap": "Reflexively answering 'always channels, that's the Go way.' Overusing channels for simple shared-state protection is slower and more error-prone than a mutex, and it signals cargo-culting rather than understanding what each primitive is for."
+    }
+  },
+  {
+    "id": "gop-009",
+    "topic": "go-python",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What does the SECOND call `f(2)` print? (the mutable default argument gotcha)",
+    "code": "def f(x, acc=[]):\n    acc.append(x)\n    return acc\n\nprint(f(1))\nprint(f(2))",
+    "lang": "py",
+    "answers": ["[1, 2]", "[1,2]"],
+    "explanation": "Default arguments are evaluated ONCE, at function-definition time — so `acc` is a single list shared across every call that omits it. First call appends 1 → `[1]`; second call appends 2 to that SAME list → `[1, 2]`. The fix: `def f(x, acc=None): acc = [] if acc is None else acc`."
+  },
+  {
+    "id": "gop-010",
+    "topic": "go-python",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What does this print? (`is` vs `==` and small-int caching)",
+    "code": "n = 100\na, b = n + 156, n + 156   # both 256\nc, d = n + 157, n + 157   # both 257\nprint(a is b)\nprint(c is d)",
+    "lang": "py",
+    "answers": ["True\nFalse", "True False"],
+    "explanation": "CPython pre-allocates and caches the small integers -5..256, so any computation that yields 256 returns that same cached object — `a is b` is True. 257 is outside the cache, so `n + 157` builds two distinct objects and `c is d` is False. Both would be `==` True. Lesson: use `==` for value equality; reserve `is` for identity (e.g. `x is None`)."
+  },
+  {
+    "id": "gop-011",
+    "topic": "go-python",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "What does CPython's GIL (Global Interpreter Lock) actually do?",
+    "choices": [
+      "It lets only one thread execute Python bytecode at a time, so CPU-bound pure-Python work doesn't scale across cores with threads — though I/O-bound threads still help and multiprocessing sidesteps it",
+      "It makes all Python code automatically thread-safe, so you never need locks",
+      "It runs threads truly in parallel across every CPU core",
+      "It prevents all race conditions in multithreaded programs"
+    ],
+    "answer": 0,
+    "lang": "py",
+    "explanation": "The GIL serializes execution of Python bytecode in CPython, so threads don't give you CPU parallelism for pure-Python work — use `multiprocessing`, subinterpreters, or native/C extensions for that. Threads DO help for I/O-bound work because the GIL is released during blocking I/O. It does NOT make your code race-free: multi-step operations can still interleave, so you still need locks."
+  },
+  {
+    "id": "gop-012",
+    "topic": "go-python",
+    "tier": 3,
+    "type": "predict",
+    "prompt": "What does this print when the module is loaded (before any call to `g`)?",
+    "code": "def a(f):\n    print(\"a\")\n    return f\n\ndef b(f):\n    print(\"b\")\n    return f\n\n@a\n@b\ndef g():\n    pass",
+    "lang": "py",
+    "answers": ["b\na", "b a", "ba"],
+    "explanation": "`@a` on top of `@b` desugars to `g = a(b(g))`, so decorators apply bottom-up: `b(g)` runs first (prints \"b\"), then `a(...)` runs (prints \"a\"). Decorators execute at DEFINITION time, not when `g` is called — so the output appears just from importing the module."
+  },
+  {
+    "id": "gop-013",
+    "topic": "go-python",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "What does this print? (Python truthiness)",
+    "code": "vals = [0, \"\", [], None, \"0\", [0], {}]\nprint([bool(v) for v in vals])",
+    "lang": "py",
+    "answers": ["[False, False, False, False, True, True, False]"],
+    "explanation": "Falsy values include `0`, empty string `\"\"`, empty containers (`[]`, `{}`, `set()`), and `None`. But `\"0\"` is a non-empty string → True, and `[0]` is a non-empty list → True (its contents are irrelevant; only emptiness matters). So the result is `[False, False, False, False, True, True, False]`. This is why `if my_list:` tests emptiness, and why `if x:` differs from `if x is not None:`."
+  },
+  {
+    "id": "gop-014",
+    "topic": "go-python",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "What does a `with` statement guarantee for a context manager?",
+    "choices": [
+      "`__exit__` runs when the block is left — including when an exception is raised — so resources like files and locks are released deterministically",
+      "The block runs in a separate thread",
+      "Any exception raised inside the block is always swallowed",
+      "`__enter__` and `__exit__` run only if the block finishes without an exception"
+    ],
+    "answer": 0,
+    "lang": "py",
+    "explanation": "`with` calls `__enter__` on entry and guarantees `__exit__` on exit whether the block succeeds or raises — which is exactly why `with open(...) as f:` reliably closes the file and `with lock:` reliably releases it. `__exit__` CAN suppress an exception by returning a truthy value, but it does not by default. `contextlib.contextmanager` lets you write one as a generator around a `yield`."
+  }
+]

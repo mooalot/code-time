@@ -1,0 +1,14 @@
+{
+  "name": "DryRun — Interview Prep",
+  "short_name": "DryRun",
+  "description": "Duolingo-style coding-interview practice: streaks, XP, and real questions for your target companies",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assets/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

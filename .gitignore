@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# node (none needed at runtime, but in case tooling is added)
+node_modules/
+npm-debug.log*
+
+# scratch
+.smoke.mjs
+.verify.mjs
+*.tmp

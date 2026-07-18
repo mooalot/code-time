@@ -1,0 +1,216 @@
+[
+  {
+    "id": "cpx-001",
+    "topic": "complexity",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "On a JavaScript array of length n, what are the (amortized) time complexities of `arr.push(x)` versus `arr.unshift(x)`?",
+    "choices": [
+      "`push` is `O(1)` amortized; `unshift` is `O(n)`",
+      "Both are `O(1)`",
+      "Both are `O(n)`",
+      "`push` is `O(n)`; `unshift` is `O(1)`"
+    ],
+    "answer": 0,
+    "explanation": "`push` appends at the end — amortized `O(1)` (occasional resize aside). `unshift` inserts at the front, which shifts every existing element one slot to the right, so it is `O(n)`. Prefer `push` (and reverse at the end) over repeated `unshift` in a loop."
+  },
+  {
+    "id": "cpx-002",
+    "topic": "complexity",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "You need fast membership checks. What are the average lookup complexities of `map.has(key)` (a `Map`), `obj[key]` (plain object), and `arr.includes(x)` (array)?",
+    "choices": [
+      "`Map` `O(1)`, object `O(1)`, array `O(n)`",
+      "All three are `O(1)`",
+      "All three are `O(log n)`",
+      "`Map` `O(log n)`, object `O(1)`, array `O(n)`"
+    ],
+    "answer": 0,
+    "explanation": "`Map` and plain objects hash their keys, giving average `O(1)` lookup; an array must scan linearly, so `includes` is `O(n)`. Doing an `includes` check inside a loop is the classic accidental `O(n^2)` — switch to a `Set`/`Map`."
+  },
+  {
+    "id": "cpx-003",
+    "topic": "complexity",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "What is the worst-case time complexity of a general comparison-based sort (mergesort, heapsort, `Array.prototype.sort`), and can any comparison sort do better?",
+    "choices": [
+      "`O(n log n)`, and no comparison sort can beat that in the worst case",
+      "`O(n)` — comparison sorts are linear",
+      "`O(n^2)` is the best achievable",
+      "`O(n log n)`, but a cleverer comparison sort can reach `O(n)`"
+    ],
+    "answer": 0,
+    "explanation": "There is a proven `Ω(n log n)` lower bound for comparison sorts (the decision-tree argument: n! orderings need log2(n!) ≈ n log n comparisons to distinguish). Only non-comparison sorts like counting or radix sort can go linear, and only when key ranges are bounded."
+  },
+  {
+    "id": "cpx-004",
+    "topic": "complexity",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "What is the time complexity of this function in terms of `n = nums.length`?",
+    "code": "function countZeroPairs(nums) {\n  let count = 0;\n  for (let i = 0; i < nums.length; i++) {\n    for (let j = i + 1; j < nums.length; j++) {\n      if (nums[i] + nums[j] === 0) count++;\n    }\n  }\n  return count;\n}",
+    "lang": "js",
+    "choices": [
+      "`O(n^2)`",
+      "`O(n)`",
+      "`O(n log n)`",
+      "`O(2^n)`"
+    ],
+    "answer": 0,
+    "explanation": "The inner loop runs n−1, then n−2, … times, totaling n(n−1)/2 ≈ n²/2 iterations. Starting `j` at `i + 1` only halves the work — a constant factor — so it is still `O(n^2)`."
+  },
+  {
+    "id": "cpx-005",
+    "topic": "complexity",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "How many times does the loop body run, in terms of `n`?",
+    "code": "let count = 0;\nfor (let i = 1; i < n; i *= 2) {\n  count++;\n}",
+    "lang": "js",
+    "choices": [
+      "`O(log n)`",
+      "`O(n)`",
+      "`O(n log n)`",
+      "`O(sqrt(n))`"
+    ],
+    "answer": 0,
+    "explanation": "`i` doubles each iteration (1, 2, 4, 8, …), so it reaches `n` after about log₂(n) steps. Multiplying (or dividing) the loop variable by a constant is the signature of logarithmic time — the same reason binary search is `O(log n)`."
+  },
+  {
+    "id": "cpx-006",
+    "topic": "complexity",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given a **sorted** array `nums` and a `target`, return its index or `-1` if absent. Example: `nums=[-1,0,3,5,9,12]`, `target=9` → `4`.",
+    "reveal": {
+      "approach": "**Binary search.** Maintain a `[lo, hi]` window; compare the middle element to the target and discard the half that cannot contain it. Halving the search space each step gives logarithmic time.",
+      "code": "function binarySearch(nums, target) {\n  let lo = 0, hi = nums.length - 1;\n  while (lo <= hi) {\n    const mid = (lo + hi) >> 1;\n    if (nums[mid] === target) return mid;\n    if (nums[mid] < target) lo = mid + 1;\n    else hi = mid - 1;\n  }\n  return -1;\n}",
+      "lang": "js",
+      "complexity": "`O(log n)` time, `O(1)` space.",
+      "insight": "Use `lo <= hi` (not `<`) and always move a pointer past `mid` (`mid + 1` / `mid - 1`) to avoid an infinite loop when the window shrinks to one element.",
+      "link": "https://leetcode.com/problems/binary-search/"
+    }
+  },
+  {
+    "id": "cpx-007",
+    "topic": "complexity",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "A recursive function computes a binary tree’s height with one recursive call per child and no other allocation. Ignoring the input tree and the return value, what is its **space** complexity?",
+    "choices": [
+      "`O(h)`, where h is the tree height — the maximum depth of the call stack",
+      "`O(1)` — recursion does not use extra memory",
+      "`O(n)` in every case, regardless of the tree’s shape",
+      "`O(log n)` in every case"
+    ],
+    "answer": 0,
+    "explanation": "Each in-flight recursive call holds a stack frame; the deepest chain of unfinished calls equals the tree height h. A balanced tree makes that `O(log n)`, but a degenerate (linked-list-shaped) tree makes it `O(n)` — so the general answer is `O(h)`."
+  },
+  {
+    "id": "cpx-008",
+    "topic": "complexity",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Which statement about sorting-algorithm properties is correct?",
+    "choices": [
+      "Mergesort is stable but needs `O(n)` extra space; heapsort is in-place (`O(1)` extra) but not stable",
+      "Quicksort is always stable and runs in `O(n log n)` worst case",
+      "Heapsort is stable and mergesort sorts in place with `O(1)` extra space",
+      "Every `O(n log n)` sort is stable"
+    ],
+    "answer": 0,
+    "explanation": "Stable = equal keys keep their original relative order. Mergesort preserves order but uses an auxiliary array (`O(n)`); heapsort sorts in place but reorders equal keys, so it is not stable. Quicksort is in-place but `O(n^2)` worst case and not stable. (Counting sort is both stable and `O(n)` when the key range is bounded.)"
+  },
+  {
+    "id": "cpx-009",
+    "topic": "complexity",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Compute the n-th Fibonacci number (`F(0)=0, F(1)=1`). Show why naive recursion is exponential and how to make it linear. Example: `n=6` → `8`.",
+    "reveal": {
+      "approach": "**Dynamic programming — memoization (top-down) or tabulation (bottom-up).** Plain recursion `fib(n-1) + fib(n-2)` recomputes the same subproblems exponentially. Memoization caches each `fib(k)` the first time; tabulation builds up iteratively and, since only the last two values matter, needs just `O(1)` space.",
+      "code": "// Top-down with memoization: O(n) time, O(n) space\nfunction fibMemo(n, memo = {}) {\n  if (n < 2) return n;\n  if (memo[n] !== undefined) return memo[n];\n  return (memo[n] = fibMemo(n - 1, memo) + fibMemo(n - 2, memo));\n}\n\n// Bottom-up tabulation: O(n) time, O(1) space\nfunction fibTab(n) {\n  if (n < 2) return n;\n  let a = 0, b = 1;\n  for (let i = 2; i <= n; i++) [a, b] = [b, a + b];\n  return b;\n}",
+      "lang": "js",
+      "complexity": "Naive recursion `O(2^n)`; memoized/tabulated `O(n)` time. Space `O(n)` (memo) or `O(1)` (rolling tabulation).",
+      "insight": "The naive tree recomputes overlapping subproblems; DP’s whole job is to compute each subproblem once. Overlapping subproblems + optimal substructure = reach for DP.",
+      "link": "https://leetcode.com/problems/fibonacci-number/"
+    }
+  },
+  {
+    "id": "cpx-010",
+    "topic": "complexity",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "You are climbing stairs of `n` steps, taking 1 or 2 steps at a time. How many distinct ways can you reach the top? Example: `n=3` → `3` (`1+1+1`, `1+2`, `2+1`).",
+    "reveal": {
+      "approach": "**Dynamic programming (bottom-up).** Ways to reach step `i` = ways to reach `i−1` (then a 1-step) + ways to reach `i−2` (then a 2-step). That is the Fibonacci recurrence; carry two rolling values for `O(1)` space.",
+      "code": "function climbStairs(n) {\n  let a = 1, b = 1; // ways to reach step 0 and step 1\n  for (let i = 2; i <= n; i++) [a, b] = [b, a + b];\n  return b;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(1)` space.",
+      "insight": "Recognizing this as Fibonacci is the whole trick: the last move is either a 1 or a 2, so the counts add. The same recurrence powers many \"count the paths\" DP problems.",
+      "link": "https://leetcode.com/problems/climbing-stairs/"
+    }
+  },
+  {
+    "id": "cpx-011",
+    "topic": "complexity",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given house values in a row, rob the maximum total **without robbing two adjacent houses**. Example: `[2,7,9,3,1]` → `12` (rob houses 0, 2, 4).",
+    "reveal": {
+      "approach": "**Dynamic programming.** At each house choose the better of: skip it (keep the previous best) or rob it (its value plus the best from two houses back). Track the best-through-previous (`cur`) and best-through-two-back (`prev`) as rolling values.",
+      "code": "function rob(nums) {\n  let prev = 0, cur = 0;\n  for (const n of nums) {\n    const next = Math.max(cur, prev + n);\n    prev = cur;\n    cur = next;\n  }\n  return cur;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(1)` space.",
+      "insight": "The adjacency constraint means the recurrence looks two steps back, not one. Two rolling variables replace a full DP array once you see only `i−1` and `i−2` are used.",
+      "link": "https://leetcode.com/problems/house-robber/"
+    }
+  },
+  {
+    "id": "cpx-012",
+    "topic": "complexity",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Given coin denominations and an `amount`, return the fewest coins that sum to it, or `-1` if impossible (unlimited coins of each type). Example: `coins=[1,2,5]`, `amount=11` → `3` (`5+5+1`). **Tier 3 (stretch).**",
+    "reveal": {
+      "approach": "**Unbounded-knapsack DP (bottom-up).** Let `dp[a]` be the fewest coins to make amount `a`. Initialize `dp[0]=0` and everything else to Infinity; for each amount, try every coin and take `1 + dp[a - coin]`. The answer is `dp[amount]`.",
+      "code": "function coinChange(coins, amount) {\n  const dp = new Array(amount + 1).fill(Infinity);\n  dp[0] = 0;\n  for (let a = 1; a <= amount; a++) {\n    for (const coin of coins) {\n      if (coin <= a) dp[a] = Math.min(dp[a], dp[a - coin] + 1);\n    }\n  }\n  return dp[amount] === Infinity ? -1 : dp[amount];\n}",
+      "lang": "js",
+      "complexity": "`O(amount · coins.length)` time, `O(amount)` space.",
+      "insight": "A greedy \"take the biggest coin first\" fails for arbitrary denominations (e.g. coins `[1,3,4]`, amount 6). DP tries every coin at every subamount and so is always correct.",
+      "link": "https://leetcode.com/problems/coin-change/"
+    }
+  },
+  {
+    "id": "cpx-013",
+    "topic": "complexity",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Search a value in a sorted array that has been **rotated** at an unknown pivot; return its index or `-1`, in `O(log n)`. Example: `nums=[4,5,6,7,0,1,2]`, `target=0` → `4`. **Tier 3 (stretch).**",
+    "reveal": {
+      "approach": "**Modified binary search.** At each `mid`, one half is still sorted. Determine which half is sorted (`nums[lo] <= nums[mid]`), check whether the target lies within that sorted half’s range, and recurse into the half that must contain it.",
+      "code": "function search(nums, target) {\n  let lo = 0, hi = nums.length - 1;\n  while (lo <= hi) {\n    const mid = (lo + hi) >> 1;\n    if (nums[mid] === target) return mid;\n    if (nums[lo] <= nums[mid]) {            // left half sorted\n      if (nums[lo] <= target && target < nums[mid]) hi = mid - 1;\n      else lo = mid + 1;\n    } else {                               // right half sorted\n      if (nums[mid] < target && target <= nums[hi]) lo = mid + 1;\n      else hi = mid - 1;\n    }\n  }\n  return -1;\n}",
+      "lang": "js",
+      "complexity": "`O(log n)` time, `O(1)` space.",
+      "insight": "The pivot guarantees at least one side of `mid` is sorted; identifying it and testing the target against that side’s bounds preserves the halving that keeps it logarithmic.",
+      "link": "https://leetcode.com/problems/search-in-rotated-sorted-array/"
+    }
+  },
+  {
+    "id": "cpx-014",
+    "topic": "complexity",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "A dynamic array doubles its capacity when full, copying all existing elements on each resize. Over `n` `push` operations starting from empty, what is the total cost and the amortized per-operation cost?",
+    "choices": [
+      "Total `O(n)`, so `O(1)` amortized per push",
+      "Total `O(n log n)`, so `O(log n)` amortized per push",
+      "Total `O(n^2)`, so `O(n)` amortized per push",
+      "Every push is `O(n)` because a resize might copy the whole array"
+    ],
+    "answer": 0,
+    "explanation": "Resizes happen at sizes 1, 2, 4, …, n, and the copy costs sum to 1 + 2 + 4 + … + n < 2n = `O(n)` total. Spread over n pushes that is `O(1)` amortized, even though any single resize is `O(n)`. This is the textbook amortized-analysis result for `push`/`ArrayList`/`vector`."
+  }
+]

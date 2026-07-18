@@ -1,0 +1,242 @@
+[
+  {
+    "id": "arr-001",
+    "topic": "dsa-arrays",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Given an array `nums` and a `target`, return the indices of the two numbers that add up to `target` (exactly one answer exists; you may not reuse an element). Example: `nums=[2,7,11,15]`, `target=9` → `[0,1]`.",
+    "reveal": {
+      "approach": "**Hash map, one pass.** As you scan, for each `num` check whether its complement `target - num` was already seen. Store `value → index` in a map so the lookup is `O(1)`; the first time a complement matches you have the pair.",
+      "code": "function twoSum(nums, target) {\n  const seen = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const need = target - nums[i];\n    if (seen.has(need)) return [seen.get(need), i];\n    seen.set(nums[i], i);\n  }\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(n)` space.",
+      "insight": "The brute-force double loop is `O(n^2)`; trading space for a hash map makes each complement lookup `O(1)`.",
+      "link": "https://leetcode.com/problems/two-sum/"
+    }
+  },
+  {
+    "id": "arr-002",
+    "topic": "dsa-arrays",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Return `true` if string `t` is an anagram of string `s` (same characters, same counts). Example: `s=\"anagram\"`, `t=\"nagaram\"` → `true`; `s=\"rat\"`, `t=\"car\"` → `false`.",
+    "reveal": {
+      "approach": "**Frequency count (hash map).** Tally each character of `s`, then decrement while scanning `t`; if any count goes negative or a char is missing, they differ. A quick length check rejects mismatches early.",
+      "code": "function isAnagram(s, t) {\n  if (s.length !== t.length) return false;\n  const count = {};\n  for (const c of s) count[c] = (count[c] || 0) + 1;\n  for (const c of t) {\n    if (!count[c]) return false;\n    count[c]--;\n  }\n  return true;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(k)` space where k is the alphabet size.",
+      "insight": "Counting is `O(n)`; sorting both strings also works but is `O(n log n)`.",
+      "link": "https://leetcode.com/problems/valid-anagram/"
+    }
+  },
+  {
+    "id": "arr-003",
+    "topic": "dsa-arrays",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Move all `0`s in `nums` to the end **in place** while keeping the relative order of the non-zero elements. Example: `[0,1,0,3,12]` → `[1,3,12,0,0]`.",
+    "reveal": {
+      "approach": "**Two-pointer / write index.** Keep a slow `insert` pointer for the next non-zero slot. Scan with a fast pointer; whenever you see a non-zero, write it at `insert` and advance `insert`. Finally fill the tail with zeros.",
+      "code": "function moveZeroes(nums) {\n  let insert = 0;\n  for (let i = 0; i < nums.length; i++) {\n    if (nums[i] !== 0) nums[insert++] = nums[i];\n  }\n  while (insert < nums.length) nums[insert++] = 0;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(1)` space.",
+      "insight": "The write index preserves order for free; you never need a second array.",
+      "link": "https://leetcode.com/problems/move-zeroes/"
+    }
+  },
+  {
+    "id": "arr-004",
+    "topic": "dsa-arrays",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Return `true` if a string is a palindrome, considering only alphanumeric characters and ignoring case. Example: `\"A man, a plan, a canal: Panama\"` → `true`; `\"race a car\"` → `false`.",
+    "reveal": {
+      "approach": "**Two pointers from both ends.** Normalize (lowercase, strip non-alphanumerics), then compare `left` and `right` characters moving inward; mismatch means not a palindrome.",
+      "code": "function isPalindrome(s) {\n  const clean = s.toLowerCase().replace(/[^a-z0-9]/g, '');\n  let l = 0, r = clean.length - 1;\n  while (l < r) {\n    if (clean[l] !== clean[r]) return false;\n    l++; r--;\n  }\n  return true;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(n)` space for the cleaned copy (or `O(1)` if you skip non-alphanumerics in place).",
+      "insight": "The two-pointer converge pattern is the core string-palindrome trick; reversing the whole string also works but allocates.",
+      "link": "https://leetcode.com/problems/valid-palindrome/"
+    }
+  },
+  {
+    "id": "arr-005",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given `prices` where `prices[i]` is a stock price on day `i`, return the max profit from one buy and one later sell (0 if none). Example: `[7,1,5,3,6,4]` → `5` (buy at 1, sell at 6).",
+    "reveal": {
+      "approach": "**Single pass, track running minimum.** Keep the lowest price seen so far; at each day the best sale-today profit is `price - minSoFar`. Update the answer with the max of those. This is a one-dimensional sweep, no nested loop.",
+      "code": "function maxProfit(prices) {\n  let minPrice = Infinity, best = 0;\n  for (const p of prices) {\n    if (p < minPrice) minPrice = p;\n    else if (p - minPrice > best) best = p - minPrice;\n  }\n  return best;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(1)` space.",
+      "insight": "You never need to know which future day sells highest — only the min price to the left of today matters.",
+      "link": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"
+    }
+  },
+  {
+    "id": "arr-006",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given heights `height[i]`, pick two lines that with the x-axis form a container holding the most water. Return that max area. Example: `[1,8,6,2,5,4,8,3,7]` → `49`.",
+    "reveal": {
+      "approach": "**Two pointers, opposite ends.** Area = `min(height[l], height[r]) * (r - l)`. Start wide, then move the pointer at the **shorter** line inward — moving the taller one can only shrink area, so the shorter side is the limiting factor to improve.",
+      "code": "function maxArea(height) {\n  let l = 0, r = height.length - 1, best = 0;\n  while (l < r) {\n    const area = Math.min(height[l], height[r]) * (r - l);\n    best = Math.max(best, area);\n    if (height[l] < height[r]) l++;\n    else r--;\n  }\n  return best;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(1)` space.",
+      "insight": "The greedy move-the-shorter-wall rule is what beats the `O(n^2)` all-pairs check; width shrinks each step, so only a taller wall can compensate.",
+      "link": "https://leetcode.com/problems/container-with-most-water/"
+    }
+  },
+  {
+    "id": "arr-007",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Return the length of the longest substring without repeating characters. Example: `\"abcabcbb\"` → `3` (`\"abc\"`); `\"pwwkew\"` → `3` (`\"wke\"`).",
+    "reveal": {
+      "approach": "**Sliding window with a last-seen map.** Expand the window by moving the right end; store each char’s latest index. When a char repeats inside the window, jump `start` to just past its previous index. Track the max window width.",
+      "code": "function lengthOfLongestSubstring(s) {\n  const seen = new Map();\n  let start = 0, best = 0;\n  for (let i = 0; i < s.length; i++) {\n    const c = s[i];\n    if (seen.has(c) && seen.get(c) >= start) {\n      start = seen.get(c) + 1;\n    }\n    seen.set(c, i);\n    best = Math.max(best, i - start + 1);\n  }\n  return best;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(k)` space (k = distinct chars).",
+      "insight": "The `seen.get(c) >= start` guard prevents `start` from moving backward when a duplicate lies outside the current window.",
+      "link": "https://leetcode.com/problems/longest-substring-without-repeating-characters/"
+    }
+  },
+  {
+    "id": "arr-008",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Find the contiguous subarray with the largest sum and return that sum. Example: `[-2,1,-3,4,-1,2,1,-5,4]` → `6` (subarray `[4,-1,2,1]`).",
+    "reveal": {
+      "approach": "**Kadane’s algorithm (running DP).** Keep `cur` = best sum ending at the current index: either extend the previous subarray (`cur + num`) or restart at `num`, whichever is larger. Track the global `best`.",
+      "code": "function maxSubArray(nums) {\n  let cur = nums[0], best = nums[0];\n  for (let i = 1; i < nums.length; i++) {\n    cur = Math.max(nums[i], cur + nums[i]);\n    best = Math.max(best, cur);\n  }\n  return best;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(1)` space.",
+      "insight": "The key decision at each step: is the running sum helping or dragging me down? If `cur` went negative, drop it and start fresh.",
+      "link": "https://leetcode.com/problems/maximum-subarray/"
+    }
+  },
+  {
+    "id": "arr-009",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Group words that are anagrams of each other. Example: `[\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]` → `[[\"eat\",\"tea\",\"ate\"],[\"tan\",\"nat\"],[\"bat\"]]` (order within/among groups doesn’t matter).",
+    "reveal": {
+      "approach": "**Hash map keyed by a canonical form.** Anagrams share the same sorted letters, so use the sorted string as a map key and bucket words under it. (A 26-length count string is an `O(k)` alternative key.)",
+      "code": "function groupAnagrams(strs) {\n  const groups = new Map();\n  for (const s of strs) {\n    const key = [...s].sort().join('');\n    if (!groups.has(key)) groups.set(key, []);\n    groups.get(key).push(s);\n  }\n  return [...groups.values()];\n}",
+      "lang": "js",
+      "complexity": "`O(n · k log k)` time (n words, k = word length), `O(n · k)` space.",
+      "insight": "The trick is choosing a key that is identical for all anagrams; sorting is the simplest such fingerprint.",
+      "link": "https://leetcode.com/problems/group-anagrams/"
+    }
+  },
+  {
+    "id": "arr-010",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given a string of `()[]{}`, return `true` if every bracket is closed by the correct type in the correct order. Example: `\"([])\"` → `true`; `\"([)]\"` → `false`.",
+    "reveal": {
+      "approach": "**Stack.** Push opening brackets; on a closing bracket, pop and verify it matches the expected opener. A mismatch, or a non-empty stack at the end, means invalid.",
+      "code": "function isValid(s) {\n  const pairs = { ')': '(', ']': '[', '}': '{' };\n  const stack = [];\n  for (const c of s) {\n    if (c === '(' || c === '[' || c === '{') {\n      stack.push(c);\n    } else if (stack.pop() !== pairs[c]) {\n      return false;\n    }\n  }\n  return stack.length === 0;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(n)` space.",
+      "insight": "Matching nested pairs is inherently last-in-first-out — the canonical signal to reach for a stack.",
+      "link": "https://leetcode.com/problems/valid-parentheses/"
+    }
+  },
+  {
+    "id": "arr-011",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Evaluate an arithmetic expression in Reverse Polish Notation (tokens are numbers or `+ - * /`; division truncates toward zero). Example: `[\"2\",\"1\",\"+\",\"3\",\"*\"]` → `9`. (Instructure asks this.)",
+    "reveal": {
+      "approach": "**Stack evaluation.** Push numbers; on an operator, pop the top two operands (second pop is the left operand), apply, and push the result. The final stack value is the answer.",
+      "code": "function evalRPN(tokens) {\n  const stack = [];\n  const ops = {\n    '+': (a, b) => a + b,\n    '-': (a, b) => a - b,\n    '*': (a, b) => a * b,\n    '/': (a, b) => Math.trunc(a / b),\n  };\n  for (const t of tokens) {\n    if (t in ops) {\n      const b = stack.pop(), a = stack.pop();\n      stack.push(ops[t](a, b));\n    } else {\n      stack.push(Number(t));\n    }\n  }\n  return stack.pop();\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(n)` space.",
+      "insight": "Operand order matters for `-` and `/`: the first value popped is the right-hand operand. Use `Math.trunc`, not `Math.floor`, so `-7 / 2` truncates to `-3`.",
+      "link": "https://leetcode.com/problems/evaluate-reverse-polish-notation/"
+    }
+  },
+  {
+    "id": "arr-012",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given a list of intervals `[start, end]`, merge all overlapping ones. Example: `[[1,3],[2,6],[8,10],[15,18]]` → `[[1,6],[8,10],[15,18]]`.",
+    "reveal": {
+      "approach": "**Sort by start, then sweep.** After sorting by start time, walk the list: if the current interval overlaps the last merged one (`start <= lastEnd`), extend that end to the max; otherwise start a new merged interval.",
+      "code": "function merge(intervals) {\n  intervals.sort((a, b) => a[0] - b[0]);\n  const res = [intervals[0]];\n  for (let i = 1; i < intervals.length; i++) {\n    const last = res[res.length - 1];\n    if (intervals[i][0] <= last[1]) {\n      last[1] = Math.max(last[1], intervals[i][1]);\n    } else {\n      res.push(intervals[i]);\n    }\n  }\n  return res;\n}",
+      "lang": "js",
+      "complexity": "`O(n log n)` time (the sort dominates), `O(n)` space.",
+      "insight": "Sorting by start guarantees any overlap is with the most recent merged interval only — you never look back further.",
+      "link": "https://leetcode.com/problems/merge-intervals/"
+    }
+  },
+  {
+    "id": "arr-013",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Return the number of contiguous subarrays whose sum equals `k`. Example: `nums=[1,1,1]`, `k=2` → `2`; `nums=[1,2,3]`, `k=3` → `2`.",
+    "reveal": {
+      "approach": "**Prefix sum + hash map of counts.** A subarray `(i, j]` sums to `k` when `prefix[j] - prefix[i] = k`, i.e. `prefix[i] = prefix[j] - k`. Keep a running prefix sum and a map of how many times each prefix value has occurred; add `count[sum - k]` at each step. Seed the map with `{0: 1}` for subarrays starting at index 0.",
+      "code": "function subarraySum(nums, k) {\n  const counts = new Map([[0, 1]]);\n  let sum = 0, res = 0;\n  for (const n of nums) {\n    sum += n;\n    res += counts.get(sum - k) || 0;\n    counts.set(sum, (counts.get(sum) || 0) + 1);\n  }\n  return res;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(n)` space.",
+      "insight": "Sliding window fails here because negatives break monotonicity — prefix sums with a hash map handle any values.",
+      "link": "https://leetcode.com/problems/subarray-sum-equals-k/"
+    }
+  },
+  {
+    "id": "arr-014",
+    "topic": "dsa-arrays",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Given non-negative heights representing an elevation map (each bar width 1), compute how much rain water is trapped. Example: `[0,1,0,2,1,0,1,3,2,1,2,1]` → `6`. **Tier 3 (stretch).**",
+    "reveal": {
+      "approach": "**Two pointers with running left/right maxima.** Water above a bar = `min(maxLeft, maxRight) - height`. Move the pointer on the smaller side inward: if `leftMax < rightMax`, the left bar’s water is fixed by `leftMax` alone, so add `leftMax - height[l]` and advance. Symmetric on the right.",
+      "code": "function trap(height) {\n  let l = 0, r = height.length - 1;\n  let leftMax = 0, rightMax = 0, water = 0;\n  while (l < r) {\n    if (height[l] < height[r]) {\n      leftMax = Math.max(leftMax, height[l]);\n      water += leftMax - height[l];\n      l++;\n    } else {\n      rightMax = Math.max(rightMax, height[r]);\n      water += rightMax - height[r];\n      r--;\n    }\n  }\n  return water;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(1)` space.",
+      "insight": "The insight: the smaller of the two walls bounds the water, so whichever side is shorter can be resolved immediately without knowing the other side’s exact future max.",
+      "link": "https://leetcode.com/problems/trapping-rain-water/"
+    }
+  },
+  {
+    "id": "arr-015",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given daily `temperatures`, return an array `answer` where `answer[i]` is the number of days you must wait after day `i` for a warmer temperature (0 if none). Example: `[73,74,75,71,69,72,76,73]` → `[1,1,4,2,1,1,0,0]`.",
+    "reveal": {
+      "approach": "**Monotonic decreasing stack of indices.** Walk left to right keeping a stack of indices whose temperatures are still waiting for a warmer day. For each `i`, while the current temp is warmer than the temp at the stack top, pop that index `j` and set `answer[j] = i - j`. Then push `i`.",
+      "code": "function dailyTemperatures(t) {\n  const res = new Array(t.length).fill(0);\n  const st = []; // indices, temps decreasing\n  for (let i = 0; i < t.length; i++) {\n    while (st.length && t[i] > t[st[st.length - 1]]) {\n      const j = st.pop();\n      res[j] = i - j;\n    }\n    st.push(i);\n  }\n  return res;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(n)` space.",
+      "insight": "Looks O(n²) but each index is pushed and popped at most once, so it is linear. The monotonic-stack pattern also solves Next Greater Element and Largest Rectangle in Histogram.",
+      "link": "https://leetcode.com/problems/daily-temperatures/"
+    }
+  },
+  {
+    "id": "arr-016",
+    "topic": "dsa-arrays",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Return the `k` most frequent elements. Example: `nums=[1,1,1,2,2,3], k=2` → `[1,2]`.",
+    "reveal": {
+      "approach": "**Count, then select by frequency.** Build a value→count map. Then either (a) push into a min-heap of size `k` → `O(n log k)`, or (b) **bucket sort**: index buckets by frequency (0..n) and read from the highest bucket down → `O(n)`.",
+      "code": "function topKFrequent(nums, k) {\n  const freq = new Map();\n  for (const n of nums) freq.set(n, (freq.get(n) || 0) + 1);\n  const buckets = Array.from({ length: nums.length + 1 }, () => []);\n  for (const [n, c] of freq) buckets[c].push(n);\n  const res = [];\n  for (let c = buckets.length - 1; c >= 0 && res.length < k; c--) {\n    for (const n of buckets[c]) { res.push(n); if (res.length === k) break; }\n  }\n  return res;\n}",
+      "lang": "js",
+      "complexity": "Bucket sort: `O(n)` time, `O(n)` space. Heap variant: `O(n log k)`.",
+      "insight": "A full sort by count is `O(n log n)`; bucketing by frequency avoids the sort entirely because counts are bounded by `n`. The min-heap-of-size-k answer is the one most interviewers expect you to name first.",
+      "link": "https://leetcode.com/problems/top-k-frequent-elements/"
+    }
+  }
+]

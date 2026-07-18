@@ -1,0 +1,211 @@
+[
+  {
+    "id": "prc-001",
+    "topic": "practical",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "A colleague's price check keeps failing. What does this log?",
+    "code": "const subtotal = 0.1 + 0.2;\nconsole.log(subtotal === 0.3);",
+    "lang": "js",
+    "answers": ["false"],
+    "explanation": "`0.1 + 0.2` is `0.30000000000000004` in IEEE-754 double-precision floating point, so the strict comparison is `false`. Never compare floats (or money) for exact equality — compare within an epsilon, or work in integer cents."
+  },
+  {
+    "id": "prc-002",
+    "topic": "practical",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "This `map` is supposed to double each number. What does it actually log?",
+    "code": "const doubled = [1, 2, 3].map((n) => { n * 2; });\nconsole.log(doubled);",
+    "lang": "js",
+    "answers": ["[undefined, undefined, undefined]", "[undefined,undefined,undefined]"],
+    "explanation": "The arrow function uses a block body `{ ... }`, so `n * 2` is evaluated and discarded — there's no `return`. Every element maps to `undefined`. Either drop the braces (`(n) => n * 2`) or add an explicit `return`."
+  },
+  {
+    "id": "prc-003",
+    "topic": "practical",
+    "tier": 1,
+    "type": "flashcard",
+    "prompt": "You're given a take-home: build a small app, ~4 hours. How do you approach it to maximize your signal?",
+    "reveal": {
+      "answer": "Reviewers reward a small, working, well-communicated slice over an ambitious broken one. Get end-to-end working first, then polish, and make your decisions legible.",
+      "points": [
+        "**Read the prompt twice, list requirements, and scope down** to the smallest slice that's demonstrably working end-to-end before adding anything.",
+        "**Get the happy path running first** — a working 70% beats a broken 100%. Iterate outward from there.",
+        "**Write a README**: how to run it, what you built, tradeoffs, and what you'd do with more time.",
+        "**Add a few meaningful tests** on the core logic — not full coverage, just proof you test the important parts.",
+        "**Commit in small logical steps** so the history tells a story; reviewers read it.",
+        "**State assumptions** for anything ambiguous rather than guessing silently or gold-plating."
+      ],
+      "trap": "Spending the whole budget on setup and architecture (auth, Docker, clever abstractions) and submitting something where the core feature doesn't actually run."
+    }
+  },
+  {
+    "id": "prc-004",
+    "topic": "practical",
+    "tier": 1,
+    "type": "flashcard",
+    "prompt": "Bestow explicitly penalizes silence in live coding. How do you think aloud effectively without it becoming noise?",
+    "reveal": {
+      "answer": "Narrate a plan, then keep a running commentary of what you're trying and why. Interviewers grade your problem-solving process, which they can only see if you externalize it.",
+      "points": [
+        "**Restate the problem and your plan out loud before coding** — name the approach and state your assumptions.",
+        "**Keep a light running commentary**: what you're trying, why, and what you expect the result to be.",
+        "**When stuck, say so and reason through options aloud** — being stuck is normal; how you get unstuck is the signal.",
+        "**Verbalize test cases and edge cases** as you write them.",
+        "**If you need quiet to think, ask for it explicitly** ('let me think for 20 seconds') instead of going dark."
+      ],
+      "trap": "Going heads-down silent for minutes while typing. At Bestow that reads as being stuck or not communicating, and it's called out as a negative."
+    }
+  },
+  {
+    "id": "prc-005",
+    "topic": "practical",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "A teammate says `user.name` is undefined and can't figure out why. What does this log?",
+    "code": "async function getUser() {\n  return { name: \"Ada\" };\n}\n\nconst user = getUser();\nconsole.log(user.name);",
+    "lang": "js",
+    "answers": ["undefined"],
+    "explanation": "An `async` function always returns a Promise, so `user` is a `Promise`, not the object. `Promise` has no `name` property, so it logs `undefined`. The fix is `const user = await getUser();` (inside an async context)."
+  },
+  {
+    "id": "prc-006",
+    "topic": "practical",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "This handler was supposed to give each button its own index. What does it log?",
+    "code": "const fns = [];\nfor (var i = 0; i < 3; i++) {\n  fns.push(() => i);\n}\nconsole.log(fns.map((f) => f()));",
+    "lang": "js",
+    "answers": ["[3, 3, 3]", "[3,3,3]"],
+    "explanation": "`var i` is function-scoped, so all three closures capture the *same* `i`. By the time they run, the loop has finished and `i` is `3`. Change `var` to `let` (block-scoped, a fresh binding per iteration) to get `[0, 1, 2]`."
+  },
+  {
+    "id": "prc-007",
+    "topic": "practical",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "Sorting a list of quantities gives a weird order. What does this log?",
+    "code": "console.log([10, 2, 1, 20].sort());",
+    "lang": "js",
+    "answers": ["[1, 10, 2, 20]", "[1,10,2,20]"],
+    "explanation": "`Array.prototype.sort()` with no comparator coerces elements to strings and sorts lexicographically, so `\"10\"` comes before `\"2\"`. Pass a numeric comparator: `.sort((a, b) => a - b)`."
+  },
+  {
+    "id": "prc-008",
+    "topic": "practical",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Reviewing this endpoint, the list page is slow with many posts. What's the core performance problem?",
+    "code": "const posts = await db.query(\"SELECT * FROM posts\");\nfor (const post of posts) {\n  post.author = await db.query(\n    \"SELECT * FROM users WHERE id = ?\", post.userId\n  );\n}\nreturn posts;",
+    "lang": "js",
+    "choices": [
+      "One query loads the posts, then one more query runs *per post* to load its author — an N+1 query. Batch it with a single `JOIN`, or one `WHERE id IN (...)` and stitch in memory.",
+      "Nothing is wrong; the database caches the repeated author query so it only truly executes once.",
+      "The `await` inside the loop runs the author queries in parallel, exhausting the connection pool.",
+      "`SELECT *` is the only issue; selecting specific columns would make the whole thing O(1)."
+    ],
+    "answer": 0,
+    "explanation": "This is the classic N+1: 1 query for the list plus N queries for the associations. It scales linearly in round trips. Fix it by loading authors in a single batched query (a `JOIN` or `WHERE id IN (...)`) — in an ORM this is eager loading / `includes`. The `await` in the loop actually makes them *serial*, which is even worse."
+  },
+  {
+    "id": "prc-009",
+    "topic": "practical",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "You need to add a small feature to a large, unfamiliar codebase (Rula, Webflow) during a live session. What's your approach?",
+    "reveal": {
+      "answer": "Learn the local conventions from the code that's already there, make the smallest diff that fits those patterns, and lean on the existing tests as a safety net.",
+      "points": [
+        "**Find and read the tests for that area** — they document intended behavior and give you a harness to run.",
+        "**Trace one existing end-to-end flow** (route → controller → model → view) to learn the app's conventions.",
+        "**Grep for a similar existing feature and mirror its structure** — match the codebase's patterns instead of imposing your own.",
+        "**Make the smallest possible diff**, add a test alongside it, and run the suite before and after.",
+        "**Ask where things live and what the conventions are** rather than guessing across the whole repo."
+      ],
+      "trap": "Trying to read the entire codebase before touching anything, or refactoring surrounding code to your taste while adding a small feature."
+    }
+  },
+  {
+    "id": "prc-010",
+    "topic": "practical",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "A test blows up with a stack trace. How do you read it to find the actual bug quickly?",
+    "reveal": {
+      "answer": "Read the error type and message at the top, then scan down to the first frame that's in *your* code — that's usually where to start. Reproduce, then work backward from that line.",
+      "points": [
+        "**Read top-down for the error type and message first** — the message says *what*, the top frame says *where it threw*.",
+        "**Find the first frame in your own code**, skipping framework / `node_modules` frames — that's your entry point into the failure.",
+        "**`Cannot read property x of undefined`** means something you expected to exist was null/undefined; trace where that value came from.",
+        "**Reproduce it reliably**, then add a log or breakpoint at the failing line and work backward.",
+        "**For async errors the trace can be shallow** — look for the originating call, not just the microtask boundary."
+      ],
+      "trap": "Pasting the whole trace and guessing, or 'fixing' the top framework frame instead of finding the line in your own code that fed it bad data."
+    }
+  },
+  {
+    "id": "prc-011",
+    "topic": "practical",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "Explain rebase vs merge and how you resolve a conflict. When would you choose each?",
+    "reveal": {
+      "answer": "Both integrate changes and produce the same final tree; they differ in history shape. Merge records a merge commit and preserves the branch structure; rebase replays your commits on top of the target for a linear history.",
+      "points": [
+        "**Merge** preserves history and adds a merge commit; **rebase** replays your commits onto the target, giving a clean linear history.",
+        "**Rebase your feature branch** to keep it current and tidy before opening a PR; **merge** to integrate a finished/shared branch.",
+        "**Golden rule: never rebase commits others have already pulled** — it rewrites hashes and diverges everyone else.",
+        "**Resolving a conflict**: edit the marked regions (`<<<<`, `====`, `>>>>`), remove the markers, `git add`, then `git rebase --continue` (or commit for a merge); `--abort` to bail out.",
+        "**`git pull --rebase`** avoids noisy merge commits when just syncing with the remote."
+      ],
+      "trap": "Thinking rebase and merge produce different final code (they don't — same tree), or force-pushing a rebased shared branch and clobbering teammates' work."
+    }
+  },
+  {
+    "id": "prc-012",
+    "topic": "practical",
+    "tier": 3,
+    "type": "predict",
+    "prompt": "This was meant to convert an array of strings to numbers. What does it log?",
+    "code": "console.log([\"1\", \"7\", \"11\"].map(parseInt));",
+    "lang": "js",
+    "answers": ["[1, NaN, 3]", "[1,NaN,3]"],
+    "explanation": "`map` calls `parseInt(value, index)`, so the second argument becomes the *radix*. `parseInt(\"1\", 0)` → radix 0 defaults to 10 → `1`; `parseInt(\"7\", 1)` → radix 1 is invalid → `NaN`; `parseInt(\"11\", 2)` → binary → `3`. Use `.map(Number)` or `.map((s) => parseInt(s, 10))`."
+  },
+  {
+    "id": "prc-013",
+    "topic": "practical",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "In a code review of this money-transfer handler, which issue is the most important to flag?",
+    "code": "app.post(\"/transfer\", async (req, res) => {\n  const { from, to, amount } = req.body;\n  const balance = await getBalance(from);\n  if (balance >= amount) {\n    await setBalance(from, balance - amount);\n    await setBalance(to, (await getBalance(to)) + amount);\n  }\n  res.send(\"ok\");\n});",
+    "lang": "js",
+    "choices": [
+      "The read-then-write on balances isn't atomic and isn't in a transaction: concurrent transfers can double-spend, and a crash between the two `setBalance` calls loses money mid-flight.",
+      "Using `async/await` instead of `.then()` chains hurts readability and should be flagged first.",
+      "`res.send(\"ok\")` should be `res.json({ status: \"ok\" })`; that's the top priority.",
+      "The function is too long and should be split into helpers before anything else."
+    ],
+    "answer": 0,
+    "explanation": "The correctness bug dwarfs the style nits. The balance is read, checked, and written non-atomically, so two concurrent requests can both pass the check and overdraw (a race condition / lost update); a failure between the two writes leaves an inconsistent ledger. Wrap it in a DB transaction with row locking (or an atomic conditional update). Missing auth and input validation are close seconds — the style points are noise here."
+  },
+  {
+    "id": "prc-014",
+    "topic": "practical",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Filevine is a client-facing (forward-deployed) role. A stakeholder hands you a vague request: 'we need a dashboard for case status.' How do you proceed?",
+    "reveal": {
+      "answer": "Turn ambiguity into concrete, confirmed acceptance criteria before building, then ship the smallest valuable slice and iterate on real feedback. Client-facing work is as much about scoping the right thing as writing the code.",
+      "points": [
+        "**Ask clarifying questions first**: who uses it, what decision does it drive, what does 'done' look like, what are the key statuses and edge cases.",
+        "**Restate your understanding back to confirm** before building, and surface your assumptions explicitly.",
+        "**Translate the vague business ask into concrete acceptance criteria** — the version you can point at and say 'this is what we agreed.'",
+        "**Ship the smallest thing that delivers value**, get feedback, then iterate — don't build the grand version off a guess.",
+        "**Document decisions and tradeoffs** so the client and team can course-correct early."
+      ],
+      "trap": "Silently picking one interpretation, building the whole thing, and discovering you solved the wrong problem — or over-engineering for requirements nobody actually confirmed."
+    }
+  }
+]

@@ -1,0 +1,373 @@
+[
+  {
+    "id": "sys-001",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "Design a URL shortener (like bit.ly). Walk through the key decisions.",
+    "reveal": {
+      "answer": "Two operations: create a short code for a long URL, and redirect on lookup. Reads vastly outnumber writes, so the whole game is optimizing the read/redirect path.",
+      "points": [
+        "**API**: `POST /shorten { url }` returns a short code; `GET /:code` issues a redirect to the long URL.",
+        "**Code generation**: base62-encode an auto-increment id (short, collision-free), or a random 6–7 char code with a uniqueness check. Support custom aliases if needed.",
+        "**Storage**: an indexed `code` column or a KV store; the `code → url` mapping is the hot lookup. Optionally dedupe identical URLs.",
+        "**Read scaling**: cache hot codes in Redis and front the redirect with a CDN/edge — reads >> writes.",
+        "**301 vs 302**: 302 (temporary) keeps requests hitting you so you can count clicks and change the target; 301 is browser-cached and faster but you lose per-click analytics.",
+        "**Extras**: expiry/TTL, rate-limit creation to curb abuse, async click logging for analytics."
+      ],
+      "trap": "Jumping to sharding billions of rows before nailing code generation and the cached read path — or hashing the URL directly, which gives no control over collisions or length."
+    }
+  },
+  {
+    "id": "sys-002",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "Design a rate limiter that allows short bursts but caps the average rate. Which algorithm and why?",
+    "reveal": {
+      "answer": "Token bucket is the standard: a bucket holds up to N tokens and refills at R tokens/sec; each request spends a token, and an empty bucket means reject (429) or queue. It smooths the average rate while still permitting bursts up to the bucket size.",
+      "points": [
+        "**Token bucket** allows bursts (up to bucket capacity) while enforcing an average rate — vs a **fixed window** (allows 2× at boundaries) and a **sliding window** (smoother but more expensive to compute).",
+        "**Store per-key state** (token count + last-refill timestamp) in Redis, refilling *lazily* on each request (elapsed × rate) so you don't need a background refiller.",
+        "**Make the check-and-decrement atomic** (a Redis Lua script or `INCR`) so concurrent requests don't oversell tokens.",
+        "**Key by user / API key / IP**; return `429` with a `Retry-After` header.",
+        "**Decide fail-open vs fail-closed** if the limiter store is unreachable — availability vs protection.",
+        "**Distributed**: centralize counters in Redis, or give each node a slice of a global budget for lower latency."
+      ],
+      "trap": "Using fixed-window counters that let a client send 2× the limit across a window boundary, or keeping counters in per-node local memory so every server enforces its own separate limit."
+    }
+  },
+  {
+    "id": "sys-003",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "An API returns a large, frequently-changing list. Why prefer cursor (keyset) pagination over `OFFSET`/`LIMIT`?",
+    "choices": [
+      "`OFFSET N` makes the DB scan and discard N rows (slower the deeper you page), and rows shifting between requests cause skipped/duplicated items. A cursor keys off the last-seen sorted value, so it's stable and index-friendly.",
+      "Cursor pagination lets clients jump directly to an arbitrary page number, which offset can't do.",
+      "Offset pagination can't be combined with a `WHERE` filter, so cursors are required for any filtered list.",
+      "Cursors return the total row count for free, whereas offset needs a separate `COUNT(*)`."
+    ],
+    "answer": 0,
+    "explanation": "`OFFSET` scans and throws away all skipped rows (O(N) deep pages) and is unstable when data changes underneath you. Keyset/cursor pagination uses `WHERE sort_key > :last ORDER BY sort_key LIMIT n` — stable and it rides an index. The tradeoff: no random page jumps and usually no cheap total count (cursor loses it, offset can get it)."
+  },
+  {
+    "id": "sys-004",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "You're adding caching to cut load on a read-heavy service. Walk through the strategy and — the hard part — invalidation.",
+    "reveal": {
+      "answer": "Cache to reduce latency and load on hot reads; the real difficulty is keeping cached data fresh. Choose a read/write pattern and an invalidation strategy up front, and know the cost of a stale read.",
+      "points": [
+        "**Cache-aside (lazy)**: app checks cache, on miss reads the DB and populates it. Simple and resilient; the first request is a miss.",
+        "**Write-through / write-behind**: writes update the cache too so reads stay warm — more complex, and write-behind risks loss/inconsistency.",
+        "**Invalidation**: TTL (simple, bounded staleness) vs explicit invalidation on write (fresh, but easy to miss a code path). This is genuinely one of the hard problems.",
+        "**Guard the stampede**: on popular-key expiry, add jitter to TTLs and use a lock / single-flight so one request repopulates, not thousands.",
+        "**Cache the right things**: hot, read-heavy, expensive-to-compute, staleness-tolerant. Use versioned/namespaced keys so you can bust groups.",
+        "**Layer it**: browser/CDN → app cache (Redis) → DB, with a clear staleness budget at each layer."
+      ],
+      "trap": "Caching everything with an infinite TTL and no invalidation plan (serving stale data forever), or caching data whose staleness actually matters — balances, permissions, inventory."
+    }
+  },
+  {
+    "id": "sys-005",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "A query is slow. When do you add a database index, and what's the cost?",
+    "reveal": {
+      "answer": "An index is a sorted lookup structure (usually a B-tree) that turns a full table scan into a seek. Add one on selective columns you filter, join, or sort on frequently — paying a write-time cost in return.",
+      "points": [
+        "**Index columns used in `WHERE`, `JOIN`, and `ORDER BY`** — the planner uses them to avoid scanning every row.",
+        "**Selectivity matters**: an index on a low-cardinality column (a boolean) barely helps; high-cardinality columns (`user_id`, `email`) do.",
+        "**Composite indexes follow left-prefix order**: `(tenant_id, created_at)` serves filters on `tenant_id` alone or both — not `created_at` alone.",
+        "**Costs**: every index slows `INSERT`/`UPDATE`/`DELETE` and consumes space, so don't index reflexively. A covering index can serve a query entirely from the index.",
+        "**Diagnose with `EXPLAIN ANALYZE`**: look for sequential scans on large tables and confirm the index is actually used after adding it."
+      ],
+      "trap": "Adding an index per column by reflex (write amplification and wasted space), or indexing a tiny/low-cardinality column and expecting a speedup. Measure with `EXPLAIN`; don't guess."
+    }
+  },
+  {
+    "id": "sys-006",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "You add read replicas and route reads to them, writes to the primary. A user updates their profile and immediately reloads — sometimes they see the OLD value. Why, and the standard fix?",
+    "choices": [
+      "Asynchronous replication means a replica can lag the primary, so a read right after a write may hit un-replicated data. Read-your-writes: route that user's reads to the primary for a short window (or to a replica known to have caught up).",
+      "The replica is corrupted and must be rebuilt from a fresh snapshot.",
+      "Read replicas can't serve consistent reads at all, so every read must go to the primary — replicas are effectively write-only.",
+      "The cache TTL expired; replicas are always perfectly in sync with the primary."
+    ],
+    "answer": 0,
+    "explanation": "Replicas usually replicate asynchronously, so there's a small window where they're stale — this is eventual consistency. The common fix is 'read-your-writes': pin a user to the primary (or a caught-up replica) for a short time after they write, so they never see their own change disappear."
+  },
+  {
+    "id": "sys-007",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "When and why would you introduce background jobs / a message queue (Sidekiq, Oban, RabbitMQ)?",
+    "reveal": {
+      "answer": "Move slow, retryable, or spiky work out of the request path onto a queue with workers. You get faster responses, resilience to failures, and load smoothing.",
+      "points": [
+        "**Use for**: sending email/SMS, image/video processing, webhooks, report generation, third-party API calls — anything slow or that can fail and be retried.",
+        "**Shape**: a producer enqueues a job; workers consume it. Sidekiq (Rails/Redis), Oban (Elixir/Postgres), RabbitMQ/SQS/Kafka for the broker.",
+        "**Delivery is at-least-once**, so jobs can run twice — make them **idempotent** and retryable.",
+        "**Handle failure**: retries with exponential backoff, a dead-letter queue for poison messages, visibility timeouts.",
+        "**Consider** ordering (usually not guaranteed), per-tenant fairness, and backpressure when the queue backs up."
+      ],
+      "trap": "Doing slow work (emails, external API calls) synchronously in the request, or assuming exactly-once delivery and writing non-idempotent jobs that double-charge / double-send on retry."
+    }
+  },
+  {
+    "id": "sys-008",
+    "topic": "system-design",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "How do idempotency keys prevent double-charging a customer, and how do you implement them correctly?",
+    "reveal": {
+      "answer": "The client sends a unique key with a mutating request; the server records that key together with the operation's result, so a retry of the same key returns the original result instead of performing the work again.",
+      "points": [
+        "**The problem**: network timeouts make clients retry, and without protection a retried 'create charge' charges twice.",
+        "**Mechanism**: client generates a unique key (UUID) per logical operation and sends it (e.g. an `Idempotency-Key` header); server stores `key → response`.",
+        "**On a repeat key**: if the first attempt completed, return the stored response; if it's still in flight, block or return `409` — enforced with a **unique constraint / atomic insert**, not a check-then-insert.",
+        "**Scope** keys per endpoint/tenant and give them a TTL; persist the full response so retries are byte-for-byte identical.",
+        "**Commit the key record inside the same DB transaction** as the charge, so you never end up with a charge but no key (or vice versa)."
+      ],
+      "trap": "Using 'check if a charge exists, then insert' without a unique constraint — a race lets two concurrent retries both pass the check and double-charge. The key must be enforced atomically and the underlying write must be transactional."
+    }
+  },
+  {
+    "id": "sys-009",
+    "topic": "system-design",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Explain the CAP theorem and how it actually informs a design decision.",
+    "reveal": {
+      "answer": "During a network partition you must choose between Consistency (return an error / block to stay correct) and Availability (serve possibly-stale data). It's not 'pick 2 of 3' in steady state — the trade-off only bites when a partition occurs.",
+      "points": [
+        "**Consistency** (linearizable): every read sees the latest write. **Availability**: every request gets a non-error response. **Partition tolerance**: the system keeps working when the network splits — mandatory for anything distributed.",
+        "**So the real choice is CP vs AP during a partition**. CP: refuse or block to avoid wrong answers (a bank ledger, etcd/Zookeeper). AP: keep serving and reconcile later (a shopping cart, DNS, Dynamo-style stores).",
+        "**Most real systems tune per operation**: strong consistency for payments/inventory, eventual for feeds/likes/analytics.",
+        "**PACELC extends it**: even without a partition, you trade Latency against Consistency — stronger consistency costs extra round-trips."
+      ],
+      "trap": "Reciting 'pick 2 of 3' as if you could drop partition tolerance (you can't on a real network), or calling a single-node system 'CA' — the meaningful question is how the system behaves *during* a partition."
+    }
+  },
+  {
+    "id": "sys-010",
+    "topic": "system-design",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Design a multi-tenant SaaS backend (Bubble). What are the tenant-isolation strategies and their trade-offs?",
+    "reveal": {
+      "answer": "Serve many customers (tenants) from shared infrastructure while guaranteeing their data stays isolated. The core spectrum runs shared-schema → schema-per-tenant → database-per-tenant, trading isolation against cost and operability.",
+      "points": [
+        "**Shared DB, shared schema with a `tenant_id` column**: cheapest and scales to many tenants; isolation depends entirely on always filtering by `tenant_id` — one missed filter leaks data.",
+        "**Schema-per-tenant**: stronger isolation, but per-tenant migrations get heavy as tenant count grows.",
+        "**Database-per-tenant**: strongest isolation and noisy-neighbor control, easy per-tenant backup/restore — but expensive and operationally heavy for thousands of tenants.",
+        "**Enforce isolation defensively**, not by hand: an ORM default scope, Postgres Row-Level Security, and a tenant context set per request — never rely on every developer remembering the `WHERE`.",
+        "**Cross-cutting concerns**: per-tenant quotas/rate limits (noisy neighbors), per-tenant export/delete (GDPR), tenant-scoped cache keys, connection pooling."
+      ],
+      "trap": "Shared-schema with `tenant_id` but relying on hand-written `WHERE tenant_id = ?` everywhere — a single forgotten filter cross-tenant-leaks. Or jumping straight to DB-per-tenant for a product that must onboard thousands of tenants cheaply."
+    }
+  },
+  {
+    "id": "sys-011",
+    "topic": "system-design",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Design the data model for a two-sided marketplace with listings, availability, bookings, and payments (Neighbor — renting storage space).",
+    "reveal": {
+      "answer": "Model both sides (hosts with listings, renters with bookings) plus availability over time, a booking lifecycle, and escrow-style payments. The two genuinely hard parts are preventing double-bookings and the payout flow.",
+      "points": [
+        "**Core entities**: `User` (can be host and/or renter), `Listing` (location, size, price, `host_id`), `Availability` (open/booked date ranges), `Booking` (`listing_id`, `renter_id`, start/end, status), `Payment`/`Payout`, `Review`.",
+        "**Availability & double-booking is the crux**: represent booked date ranges and prevent overlap *atomically* — a transaction with an exclusion/unique constraint or a lock. Check-then-insert races into double bookings.",
+        "**Booking lifecycle as a state machine**: requested → accepted → paid → active → completed / cancelled, each transition with rules and side effects.",
+        "**Payments (escrow)**: charge the renter, hold funds, then pay out the host minus your fee (e.g. Stripe Connect); use idempotency keys; handle refunds/cancellations.",
+        "**Search/discovery** filters by location (geo) + date availability + price — this shapes the read model and indexing.",
+        "**Trust & safety**: two-way reviews, in-app messaging, identity verification."
+      ],
+      "trap": "Ignoring concurrent-booking races (checking availability then inserting without an atomic guard) and hand-waving payments — the availability model and the escrow/payout flow are the whole point of a marketplace."
+    }
+  },
+  {
+    "id": "sys-012",
+    "topic": "system-design",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Design real-time collaborative editing where many users edit one document at once (Figma). How do you handle concurrent edits?",
+    "reveal": {
+      "answer": "Users edit the same document concurrently and see each other's changes live. The two algorithm families for merging concurrent edits are Operational Transformation (OT) and CRDTs; you also need a sync server and presence.",
+      "points": [
+        "**Naive last-write-wins on the whole doc loses edits** — you must merge concurrent operations so each user's intent is preserved.",
+        "**OT (Operational Transformation)**: transform an incoming op against concurrent ops so it still applies correctly (Google Docs). Powerful, but the transform functions are hard to get right and it generally needs a central server to order ops.",
+        "**CRDTs**: data types that merge deterministically regardless of order — no central transform, great for offline/P2P — at the cost of metadata overhead. Figma uses a CRDT-like per-property model with a server as the source of truth.",
+        "**Architecture**: clients send ops over WebSockets to a sync server that orders and relays them; clients apply optimistically (local echo) then reconcile. Persist an op log plus periodic snapshots.",
+        "**Also**: presence (live cursors/selections), structural-move conflicts, and eventual convergence — everyone ends at the same state."
+      ],
+      "trap": "Sending the whole document on every keystroke or doing naive last-write-wins and silently dropping concurrent edits — or claiming OT and CRDTs are interchangeable without noting OT needs central ordering while CRDTs trade metadata for order-independence."
+    }
+  },
+  {
+    "id": "sys-013",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "Design a chat / messaging system (Podium — business-to-customer messaging across channels).",
+    "reveal": {
+      "answer": "1:1 and group messaging with persistence, ordering, history, and real-time push. For Podium, also multi-channel (SMS/webchat) feeding shared team inboxes.",
+      "points": [
+        "**Core model**: `Conversation`, `Message` (`conversation_id`, `sender_id`, body, `created_at`, a per-conversation `seq`), `Membership`. Persist messages and assign a sequence for ordering.",
+        "**Real-time delivery**: a WebSocket (or long-poll) per online client; a pub/sub layer (Redis, or channel servers like Phoenix Channels) fans a new message out to the members' live connections.",
+        "**Offline users**: store-and-forward — persist, deliver on reconnect, and send a push notification for mobile.",
+        "**Delivery semantics**: at-least-once plus client-side dedupe by message id; delivered/seen receipts.",
+        "**Scale**: partition by conversation; fan-out on write for small groups; track presence and which server holds each socket via a registry.",
+        "**Multi-channel (Podium)**: normalize inbound SMS/webchat into the same `Conversation` model and route outbound replies back to the origin channel."
+      ],
+      "trap": "Polling the database for new messages instead of using pub/sub push, or ignoring ordering and offline delivery so messages arrive out of order or vanish when a user is disconnected."
+    }
+  },
+  {
+    "id": "sys-014",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "Design a notification / activity-feed system. What's the central scaling decision?",
+    "reveal": {
+      "answer": "Deliver activity to users as a feed or notifications. The central decision is fan-out on write vs fan-out on read, driven by the follower and read/write ratios.",
+      "points": [
+        "**Fan-out on write (push)**: when a user posts, write it into each follower's precomputed feed. Fast reads, but expensive for high-follower accounts (the 'celebrity' problem) and wasteful for inactive followers.",
+        "**Fan-out on read (pull)**: build a user's feed at read time from who they follow. Cheap writes, expensive reads — fine at low volume.",
+        "**Hybrid**: push for normal users, pull for celebrities/huge fan-out, merged at read time — what large feeds actually do.",
+        "**Store per-user feeds in a fast store** (Redis list/cache) with a length cap; page with cursors; dedupe and rank (chronological vs scored).",
+        "**Notifications specifically**: generate events, coalesce them ('X and 3 others liked'), respect per-channel preferences (in-app/email/push), and deliver async via a queue."
+      ],
+      "trap": "Only ever fanning out on write and melting down when someone with 10M followers posts — or rebuilding every feed from scratch on each read at scale. Also doing notification delivery synchronously in the request path."
+    }
+  },
+  {
+    "id": "sys-015",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "Frontend system design: design an autocomplete / typeahead component. Use a structured framework.",
+    "reveal": {
+      "answer": "Use RADIO: Requirements, Architecture (components), Data model, Interface/API, Optimizations. The hard parts are network handling and accessibility, not the dropdown markup.",
+      "points": [
+        "**Requirements**: min characters, debounce delay, max results, keyboard nav, mobile, caching expectations.",
+        "**Network**: debounce keystrokes (~200-300ms); **cancel stale requests** (AbortController or ignore out-of-order responses by request id) so an earlier slow response never overwrites a newer one.",
+        "**Caching**: cache results per query (LRU / by prefix) to avoid refetching; optionally prefetch popular queries.",
+        "**Data/Interface**: `GET /suggest?q=` returns ranked suggestions; component state = {query, results, activeIndex, status}.",
+        "**Accessibility**: ARIA combobox pattern (`role=combobox`/`listbox`/`option`, `aria-activedescendant`), full keyboard support (↑/↓/Enter/Esc), announce result count.",
+        "**States**: loading, empty, error, no-results — all designed."
+      ],
+      "trap": "Jumping to the dropdown UI while ignoring debouncing, out-of-order/stale responses, caching, and accessibility — those are the actual signal."
+    }
+  },
+  {
+    "id": "sys-016",
+    "topic": "system-design",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Frontend system design: design an infinite-scrolling news feed (Twitter/Facebook-style).",
+    "reveal": {
+      "points": [
+        "**Windowing/virtualization**: only render the visible rows (react-window / virtualized list) so a 10k-item feed stays smooth and memory-bounded.",
+        "**Pagination**: cursor (keyset) not offset — offset duplicates/skips items as new posts shift the list.",
+        "**Trigger**: load the next page with an IntersectionObserver sentinel near the bottom, not a scroll handler.",
+        "**Client cache**: normalize posts by id so a like/edit updates every reference once; use SWR/React Query.",
+        "**Optimistic updates** for likes/follows with rollback on failure.",
+        "**Media**: lazy-load images/video, reserve space to avoid layout shift (CLS).",
+        "**Resilience**: preserve scroll position on back-navigation, retry failed pages, dedupe."
+      ],
+      "trap": "Rendering every item into the DOM, and using offset pagination — both break at real feed sizes."
+    }
+  },
+  {
+    "id": "sys-017",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "Frontend system design: design a reusable data table (sortable, filterable, paginated).",
+    "reveal": {
+      "points": [
+        "**Server vs client**: sort/filter/paginate on the server for large datasets (send params); client-side only for small, fully-loaded data.",
+        "**Virtualization** for many rows; memoize row components to avoid re-rendering the whole table on one cell change.",
+        "**API shape**: configurable columns (`{key, header, sortable, render}`); controlled state for sort/filter/page so parents can persist it (URL query params).",
+        "**Accessibility**: real `<table>` semantics, `aria-sort` on headers, keyboard-operable sort, caption.",
+        "**States**: loading skeleton, empty, error; sticky header; column resize/reorder as extensions."
+      ],
+      "trap": "Sorting/filtering thousands of rows in the browser, and building it from `<div>`s (loses table semantics and a11y)."
+    }
+  },
+  {
+    "id": "sys-018",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "A client data-fetching library (React Query, SWR) returns cached data instantly, then refetches in the background and updates the UI when fresh data arrives. What is this caching pattern called?",
+    "choices": [
+      "Stale-while-revalidate",
+      "Write-through cache",
+      "Optimistic locking",
+      "Cache-aside (lazy loading) only"
+    ],
+    "answer": 0,
+    "explanation": "Stale-while-revalidate serves cached (possibly stale) data immediately for a fast UI, then revalidates in the background and swaps in fresh data. It trades a brief staleness window for perceived performance — the same idea as the HTTP `stale-while-revalidate` cache directive."
+  },
+  {
+    "id": "sys-019",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "Design a CI/CD pipeline for a web app (relevant to Webflow Developer Productivity).",
+    "reveal": {
+      "points": [
+        "**Stages, fast feedback first**: lint + typecheck + unit tests (seconds) → build → integration/e2e → deploy. Fail fast and cheap.",
+        "**Branch protection**: required status checks so nothing merges red; run the fast suite on every PR.",
+        "**Speed**: cache dependencies and build artifacts, parallelize/shard tests, only run affected packages in a monorepo.",
+        "**Preview environments** per PR for review.",
+        "**Deploy safely**: canary or blue-green with automated rollback on error-rate/latency regression; migrations gated and reversible.",
+        "**Secrets** via a manager, never in the repo; sign/version artifacts.",
+        "**Observability hooks**: emit deploy markers so you can correlate a regression to a release."
+      ],
+      "trap": "One slow monolithic pipeline that runs everything serially, and deploying with no rollback path or health gate."
+    }
+  },
+  {
+    "id": "sys-020",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "How would you make a service observable in production? (metrics, logs, traces, SLOs)",
+    "reveal": {
+      "points": [
+        "**Three pillars**: metrics (aggregate trends, cheap), logs (structured, with correlation/request IDs), traces (a request across services).",
+        "**RED/USE**: track Rate, Errors, Duration per endpoint (RED) and Utilization/Saturation/Errors per resource (USE).",
+        "**SLIs/SLOs + error budgets**: define user-facing SLIs (e.g. p99 latency, success rate), set SLOs, and let the error budget decide whether to ship features or fix reliability.",
+        "**Alert on symptoms, not causes**: page on \"checkout success < 99%\", not \"CPU at 80%\".",
+        "**Distributed tracing** (OpenTelemetry) to find where latency is spent; dashboards for the golden signals."
+      ],
+      "trap": "Logging everything with no metrics or traces, and alerting on machine stats (CPU/RAM) instead of user-visible SLOs — noisy pages, slow debugging."
+    }
+  },
+  {
+    "id": "sys-021",
+    "topic": "system-design",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "You want to release a new version to 5% of users, watch error rates and latency, then gradually ramp to 100% (rolling back instantly if metrics degrade). Which deployment strategy is this?",
+    "choices": [
+      "Canary",
+      "Blue-green",
+      "Big-bang",
+      "Feature-branch"
+    ],
+    "answer": 0,
+    "explanation": "Canary routes a small percentage of traffic to the new version and ramps up while watching metrics. Blue-green keeps two full environments and switches ALL traffic at once (fast rollback, but no gradual exposure). A canary limits the blast radius of a bad release."
+  }
+]

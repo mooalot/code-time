@@ -1,0 +1,179 @@
+[
+  {
+    "id": "test-001",
+    "topic": "testing",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "Which property is the *most* important sign of a healthy unit test?",
+    "choices": [
+      "It has exactly one reason to fail — it verifies a single behavior, so a failure points straight at the cause",
+      "It exercises as many code paths as possible in one test to maximize coverage",
+      "It hits the real database so it's closer to production",
+      "It shares setup and mutable state with the other tests in the file to stay DRY"
+    ],
+    "answer": 0,
+    "explanation": "Good unit tests are fast, isolated, deterministic, and focused: one behavior, one reason to fail. A test that asserts many unrelated things is hard to diagnose when it breaks. Hitting a real DB makes it slow and flaky (that's an integration test), and shared mutable state creates order-dependent failures."
+  },
+  {
+    "id": "test-002",
+    "topic": "testing",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "In React Testing Library, why is `screen.getByRole('button', { name: /save/i })` usually preferred over `screen.getByTestId('save-btn')`?",
+    "choices": [
+      "It asserts on what a user (and assistive tech) actually perceives, so the test survives refactors and doubles as an accessibility check",
+      "`getByTestId` is deprecated and throws in modern RTL",
+      "Role queries are faster because they skip the accessibility tree",
+      "`data-testid` attributes are stripped in production, so the query would fail"
+    ],
+    "answer": 0,
+    "explanation": "RTL's guiding principle: the more your tests resemble how software is used, the more confidence they give. Querying by ARIA role and accessible name tests observable behavior (not internal class names or state) and flags missing labels. `getByTestId` is a valid last resort when nothing user-facing identifies the node."
+  },
+  {
+    "id": "test-003",
+    "topic": "testing",
+    "tier": 1,
+    "type": "flashcard",
+    "prompt": "Explain the test pyramid: unit vs integration vs e2e. Roughly what proportion of each, and what are the trade-offs? When is an end-to-end tool like Playwright/Cypress actually worth it?",
+    "reveal": {
+      "answer": "The pyramid says: lots of fast, cheap unit tests at the base; fewer integration tests in the middle; a thin layer of slow, expensive end-to-end tests at the top (roughly 70/20/10 as a starting heuristic, not a law). As you go up you gain confidence that real pieces work together but pay in speed, flakiness, and maintenance.",
+      "points": [
+        "Unit: one module in isolation — milliseconds, deterministic, pinpoint failures, but can't catch wiring bugs between components",
+        "Integration: a few real pieces together (component + store, route + DB) — the highest confidence-per-cost for most app logic",
+        "E2E (Playwright/Cypress): a real browser driving the whole stack — catches integration/regression bugs nothing else can, but slow and flaky",
+        "Reserve e2e for a handful of critical user journeys (login, checkout, the money path), not exhaustive coverage",
+        "The 'testing trophy' variant argues integration deserves the biggest slice for UI apps"
+      ],
+      "trap": "Inverting the pyramid — leaning on a huge suite of slow e2e tests. It runs for 40 minutes, flakes constantly, and nobody trusts the red build."
+    }
+  },
+  {
+    "id": "test-004",
+    "topic": "testing",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Test doubles: which pairing matches the standard (Meszaros) taxonomy?",
+    "choices": [
+      "A *stub* returns canned answers; a *mock* is pre-programmed with expectations and fails if they aren't met; a *fake* has a working lightweight implementation; a *spy* records how it was called",
+      "Stub, mock, fake, and spy are four names for the exact same thing",
+      "A *mock* returns canned data; a *stub* verifies calls; a *fake* records arguments; a *spy* is an in-memory database",
+      "A *fake* always throws; a *spy* replaces the network; a *stub* is only for classes; a *mock* is only for functions"
+    ],
+    "answer": 0,
+    "explanation": "Stubs feed indirect inputs (canned return values). Mocks assert on indirect outputs — they verify the interaction happened as expected. Fakes are real, simpler implementations (e.g. an in-memory repository). Spies wrap a real or fake function to record calls/args so you can assert afterward. The key axis is state verification (fake/stub) vs behavior verification (mock/spy)."
+  },
+  {
+    "id": "test-005",
+    "topic": "testing",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "You're testing a service that calls the Stripe SDK, which reads from your own `PricingService`, and formats a date with `date-fns`. What's the best mocking strategy?",
+    "choices": [
+      "Mock the Stripe SDK (a boundary you don't own) behind a thin wrapper, use the real `PricingService` and real `date-fns`",
+      "Mock all three — the more you mock, the more isolated and reliable the test",
+      "Mock `PricingService` and `date-fns` but hit the real Stripe API so it's realistic",
+      "Mock nothing and let the test make live network calls to Stripe"
+    ],
+    "answer": 0,
+    "explanation": "Mock at the boundaries you don't own (third-party network SDKs) — ideally through an adapter you control, so your test isn't coupled to Stripe's internal shape ('don't mock what you don't own'). Over-mocking your own collaborators (`PricingService`) couples the test to implementation and stops it catching real integration bugs; pure, fast libs like `date-fns` should just run for real."
+  },
+  {
+    "id": "test-006",
+    "topic": "testing",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "Using Jest fake timers, what does this log?",
+    "code": "jest.useFakeTimers();\nlet calls = 0;\nconst poll = () => { calls++; };\nsetInterval(poll, 1000);\njest.advanceTimersByTime(3000);\nconsole.log(calls);",
+    "answers": ["3"],
+    "placeholder": "a number",
+    "explanation": "Fake timers replace the real clock so you control time synchronously — no real waiting. `advanceTimersByTime(3000)` runs every timer that would fire within 3000ms, so the 1000ms interval executes at 1000, 2000, and 3000 → `calls === 3`. This is how you test debounce/throttle/polling deterministically. (For genuinely async UI updates you'd instead `await findBy*`/`waitFor` rather than advance a clock.)"
+  },
+  {
+    "id": "test-007",
+    "topic": "testing",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Your PR is blocked because it drops line coverage from 92% to 91%. What's the most defensible view of coverage?",
+    "choices": [
+      "Coverage is a signal, not a goal — it shows what code *ran*, not that behavior was *asserted*; chase meaningful assertions, not a number",
+      "100% coverage proves the code is bug-free, so the gate is correct",
+      "Coverage is useless and should always be ignored",
+      "Only branch coverage matters; line coverage can safely be 0%"
+    ],
+    "answer": 0,
+    "explanation": "A line can be executed with zero meaningful assertions, so high coverage can coexist with untested behavior; 100% coverage buys you 'every line ran once,' not correctness or absence of bugs. Coverage is a useful signal for finding *un-run* code, but a hard gate incentivizes assertion-free tests written to hit lines. Ask 'is the important behavior asserted?', not 'what's the number?'"
+  },
+  {
+    "id": "test-008",
+    "topic": "testing",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "What's the main trade-off of snapshot tests (e.g. Jest's `toMatchSnapshot`)?",
+    "choices": [
+      "They're cheap to create and catch unintended changes, but large/auto-updated snapshots are opaque and teams reflexively `--updateSnapshot` without reading the diff",
+      "They run the component in a real browser, so they're the slowest kind of test",
+      "They can only assert on numbers, never on rendered markup",
+      "They replace the need for any behavioral assertions entirely"
+    ],
+    "answer": 0,
+    "explanation": "Snapshots are great for catching *unexpected* output changes with little code. The failure mode: big snapshots nobody reviews, so real regressions get rubber-stamped through `jest -u`, and they break on trivial refactors (churn). Prefer small, targeted (inline) snapshots or explicit assertions on the specific thing you care about."
+  },
+  {
+    "id": "test-009",
+    "topic": "testing",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "Walk through TDD's red-green-refactor loop. When does it genuinely help, and when does it get in the way? (Omada does TDD pairing.)",
+    "reveal": {
+      "answer": "Red: write a small failing test for the next behavior. Green: write the minimum code to make it pass. Refactor: clean up with the test as a safety net. Repeat in tight loops. It works because it forces you to define 'done' before coding and keeps the design testable.",
+      "points": [
+        "Shines when requirements are clear-ish, logic is gnarly (parsers, pricing, algorithms), or you're fixing a bug — write the failing test that reproduces it first",
+        "Keeps units small and decoupled because untestable code hurts immediately",
+        "Gives fast feedback and a regression net for refactoring",
+        "Fights you during exploration/spikes when you don't yet know the API or the design",
+        "Less useful for thin glue code or UI layout you can't meaningfully assert yet",
+        "In a pairing interview: narrate the loop out loud, take tiny steps, keep the bar green"
+      ],
+      "trap": "Treating TDD as 'write all the tests first, then all the code,' or writing an over-specified test that pins implementation details so every refactor breaks it."
+    }
+  },
+  {
+    "id": "test-010",
+    "topic": "testing",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "A test passes locally but fails ~1 in 10 runs in CI. Name the common causes of flaky tests and how you'd fix each.",
+    "reveal": {
+      "answer": "Flakiness comes from nondeterminism: timing/async races, shared or leaked state between tests, order dependence, and real network/time/randomness. The fix is to remove the source of nondeterminism, not to add retries and move on.",
+      "points": [
+        "Timing/async: `sleep(500)` or asserting before the UI settled → replace with `await findBy*`/`waitFor` (poll for the condition), or fake timers for timers",
+        "Shared state: leftover DB rows, module singletons, global mocks → reset/teardown between tests, fresh fixtures, `beforeEach` cleanup",
+        "Order dependence: passes alone, fails in suite → run tests in random order to expose it; make each test self-contained",
+        "Network/external services: real HTTP calls → mock/stub the boundary or use a fake",
+        "Time/randomness: `Date.now()`, `Math.random()`, timezone → inject a clock, seed the RNG, pin TZ",
+        "Animations/transitions in e2e → wait on state, disable animations",
+        "Quarantine a flaky test loudly; never paper over it with blanket retries that hide real bugs"
+      ],
+      "trap": "Slapping `jest.retryTimes(3)` on it and calling it fixed — that hides genuine race-condition bugs that also bite users in production."
+    }
+  },
+  {
+    "id": "test-011",
+    "topic": "testing",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "For a take-home (Podium/Distru/Neighbor/Canopy style), you have limited time. How do you decide what to test, and what does a strong testing story look like to a reviewer?",
+    "reveal": {
+      "answer": "Write a few meaningful tests that prove the core behavior and guard the tricky edges — not a wall of trivial ones. Reviewers read tests as a statement of what you think matters and whether you can prioritize under time pressure.",
+      "points": [
+        "Test the core domain logic / happy path end-to-end of the feature they asked for first",
+        "Cover the edge cases that actually bite: empty input, boundaries, errors, invalid data",
+        "Prefer a handful of behavior-level tests over dozens asserting getters/setters or framework internals",
+        "Make them readable — a good test name documents the requirement (Arrange-Act-Assert)",
+        "If you cut scope, say so in the README: 'given more time I'd add integration tests for X' shows judgment",
+        "Deterministic and runnable with one command (`npm test`) — a green suite the reviewer can trust"
+      ],
+      "trap": "Padding coverage to hit a number with trivial or tautological tests, while the one gnarly piece of business logic has none. Reviewers notice where the tests aren't."
+    }
+  }
+]

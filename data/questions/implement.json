@@ -1,0 +1,236 @@
+[
+  {
+    "id": "impl-001",
+    "topic": "implement",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Implement `flatten(arr, depth = 1)` that flattens a nested array up to `depth` levels. Example: `flatten([1,[2,[3,[4]]]], 2)` → `[1,2,3,[4]]`. Passing `Infinity` should flatten completely.",
+    "code": "flatten([1,[2,[3,[4]]]], 2); // [1, 2, 3, [4]]",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Recursion with a depth counter.** `reduce` over the array; when an element is an array *and* `depth > 0`, recurse with `depth - 1` and concat the result, otherwise keep the element as-is. `depth = Infinity` never hits zero, so it flattens all the way.",
+      "code": "function flatten(arr, depth = 1) {\n  const res = [];\n  for (const x of arr) {\n    if (Array.isArray(x) && depth > 0) {\n      res.push(...flatten(x, depth - 1));\n    } else {\n      res.push(x); // push keeps a still-nested array intact\n    }\n  }\n  return res;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time in total elements, `O(depth)` recursion depth.",
+      "insight": "The built-in `arr.flat(depth)` does exactly this. The classic bug is writing `acc.concat(x)` in the reduce version: `concat` spreads an array argument, so it flattens one level *regardless of depth*. Use `push(x)` (or `concat([x])`) to keep an out-of-depth array intact, and decrement `depth` on recursion.",
+      "link": "https://www.greatfrontend.com/questions/javascript/flatten"
+    }
+  },
+  {
+    "id": "impl-002",
+    "topic": "implement",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Implement `groupBy(arr, keyFn)` (like Lodash's) that returns an object mapping each key produced by `keyFn(item)` to the array of items with that key. Example: `groupBy([6.1, 4.2, 6.3], Math.floor)` → `{ '4': [4.2], '6': [6.1, 6.3] }`.",
+    "code": "groupBy(['one','two','three'], (s) => s.length);\n// { '3': ['one','two'], '5': ['three'] }",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Reduce into an accumulator object.** For each item compute `key = keyFn(item)`, lazily create the bucket array if absent (`??=`), then push. Object keys are coerced to strings, which is why numeric keys come back as `'4'`/`'6'`.",
+      "code": "function groupBy(arr, keyFn) {\n  return arr.reduce((acc, item) => {\n    const key = keyFn(item);\n    (acc[key] ??= []).push(item);\n    return acc;\n  }, {});\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(n)` space.",
+      "insight": "`(acc[key] ??= []).push(item)` is the tight idiom — initialise the bucket only when missing. A modern alternative is `Object.groupBy(arr, keyFn)` (ES2024) or `Map.groupBy` when you need non-string keys."
+    }
+  },
+  {
+    "id": "impl-003",
+    "topic": "implement",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Implement `once(fn)`: return a function that invokes `fn` at most once, caching and returning that first result on every later call (later arguments are ignored). Useful for one-time initialisation.",
+    "code": "const init = once(() => { console.log('run'); return 42; });\ninit(); // logs 'run', returns 42\ninit(); // returns 42, logs nothing",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Closure over a `called` flag plus the cached `result`.** On the first call, flip the flag and store `fn.apply(this, args)`; afterwards just return the stored value. Forward `this`/`args` so it works as a method too.",
+      "code": "function once(fn) {\n  let called = false;\n  let result;\n  return function (...args) {\n    if (!called) {\n      called = true;\n      result = fn.apply(this, args);\n    }\n    return result;\n  };\n}",
+      "lang": "js",
+      "complexity": "`O(1)` per call, `O(1)` space.",
+      "insight": "Use a separate boolean flag rather than checking `result === undefined` — otherwise a function that legitimately returns `undefined` would re-run every time.",
+      "link": "https://www.greatfrontend.com/questions/javascript/function-once"
+    }
+  },
+  {
+    "id": "impl-004",
+    "topic": "implement",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Implement `deepClone(obj)` that recursively copies nested objects and arrays so the copy shares no references with the original. Handle `Date`, `Map`, `Set`, and **circular references**. Example: cloning `{ a: { b: 1 } }` and mutating `copy.a.b` must not affect the original.",
+    "code": "const a = { d: new Date(), list: [1, { x: 2 }] };\na.self = a; // circular\nconst b = deepClone(a);\nb.list[1].x = 99; // a.list[1].x still 2",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Recursion with a `WeakMap` of already-cloned nodes** to break cycles. Return primitives (and `null`) as-is; special-case `Date`/`RegExp`/`Map`/`Set`; for plain objects and arrays, register the fresh copy in the map *before* recursing into children so a self-reference resolves to the in-progress copy.",
+      "code": "function deepClone(obj, seen = new WeakMap()) {\n  if (obj === null || typeof obj !== 'object') return obj;\n  if (obj instanceof Date) return new Date(obj);\n  if (obj instanceof RegExp) return new RegExp(obj.source, obj.flags);\n  if (seen.has(obj)) return seen.get(obj);\n\n  if (obj instanceof Map) {\n    const m = new Map();\n    seen.set(obj, m);\n    for (const [k, v] of obj) m.set(deepClone(k, seen), deepClone(v, seen));\n    return m;\n  }\n  if (obj instanceof Set) {\n    const s = new Set();\n    seen.set(obj, s);\n    for (const v of obj) s.add(deepClone(v, seen));\n    return s;\n  }\n\n  const copy = Array.isArray(obj) ? [] : {};\n  seen.set(obj, copy);\n  for (const key of Reflect.ownKeys(obj)) {\n    copy[key] = deepClone(obj[key], seen);\n  }\n  return copy;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` in the number of nodes, `O(n)` space (copy + `WeakMap`).",
+      "insight": "The `WeakMap` registered **before** recursing is what makes circular refs terminate. The modern built-in `structuredClone(obj)` handles cycles, Dates, Maps, Sets, and TypedArrays — but it throws on functions, DOM nodes, and symbols, so know its limits.",
+      "link": "https://www.greatfrontend.com/questions/javascript/deep-clone"
+    }
+  },
+  {
+    "id": "impl-005",
+    "topic": "implement",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Implement `curry(fn)` so a fixed-arity function can be called with arguments supplied one at a time or in groups. For `const sum = curry((a, b, c) => a + b + c)`, all of `sum(1)(2)(3)`, `sum(1, 2)(3)`, and `sum(1, 2, 3)` must return `6`.",
+    "code": "const sum = curry((a, b, c) => a + b + c);\nsum(1)(2)(3);   // 6\nsum(1, 2)(3);   // 6\nsum(1)(2, 3);   // 6",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Accumulate args in a closure and compare against `fn.length` (declared arity).** If enough args have been collected, call `fn`; otherwise return a function that concatenates the next batch and recurses. `fn.length` gives the number of declared parameters.",
+      "code": "function curry(fn) {\n  return function curried(...args) {\n    if (args.length >= fn.length) {\n      return fn.apply(this, args);\n    }\n    return (...rest) => curried.apply(this, args.concat(rest));\n  };\n}",
+      "lang": "js",
+      "complexity": "`O(1)` extra work per partial application; `O(arity)` args stored.",
+      "insight": "The whole thing hinges on `fn.length`. Gotcha: rest params, defaults, and destructuring make `fn.length` unreliable (they aren't counted), so curry only works cleanly for functions with a fixed, plain parameter list.",
+      "link": "https://www.greatfrontend.com/questions/javascript/curry"
+    }
+  },
+  {
+    "id": "impl-006",
+    "topic": "implement",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Implement `memoize(fn)` that caches results keyed by the call's arguments, so a repeated call with the same args skips recomputation and returns the cached value. Example: memoizing a slow `fib` makes the second `fib(40)` instant.",
+    "code": "const fib = memoize((n) => (n < 2 ? n : fib(n - 1) + fib(n - 2)));\nfib(40); // computed once per n, then cached",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Closure over a `Map` cache.** Build a key from the arguments, return the cached value on a hit, otherwise compute, store, and return. `JSON.stringify(args)` is the simplest key strategy for primitive/JSON-serialisable arguments.",
+      "code": "function memoize(fn) {\n  const cache = new Map();\n  return function (...args) {\n    const key = JSON.stringify(args);\n    if (cache.has(key)) return cache.get(key);\n    const result = fn.apply(this, args);\n    cache.set(key, result);\n    return result;\n  };\n}",
+      "lang": "js",
+      "complexity": "`O(1)` amortised per call (plus keying cost), `O(k)` space for `k` distinct arg sets.",
+      "insight": "The key strategy is the whole ballgame. `JSON.stringify` fails on functions, `undefined`, circular refs, and treats `{a:1,b:2}` differently from `{b:2,a:1}` (key order). For single-object-arg functions, prefer a `WeakMap` keyed on the object reference so cache entries get garbage-collected.",
+      "link": "https://www.greatfrontend.com/questions/javascript/memoize"
+    }
+  },
+  {
+    "id": "impl-007",
+    "topic": "implement",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Implement an `EventEmitter` with `on(name, fn)`, `off(name, fn)`, and `emit(name, ...args)` (a pub/sub bus). `emit` calls every listener registered for that event with the provided args. Bonus: add `once`.",
+    "code": "const bus = new EventEmitter();\nfunction greet(name) { console.log('hi ' + name); }\nbus.on('login', greet);\nbus.emit('login', 'Ada'); // logs 'hi Ada'\nbus.off('login', greet);\nbus.emit('login', 'Ada'); // nothing",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Map of event name → Set of listener functions.** `on` lazily creates the Set and adds the handler; `off` deletes it; `emit` iterates the Set calling each with the args. A `Set` gives O(1) add/remove and de-dupes identical handlers. `once` wraps the handler so it removes itself after firing.",
+      "code": "class EventEmitter {\n  constructor() { this.events = new Map(); }\n\n  on(name, fn) {\n    if (!this.events.has(name)) this.events.set(name, new Set());\n    this.events.get(name).add(fn);\n    return this;\n  }\n\n  off(name, fn) {\n    this.events.get(name)?.delete(fn);\n    return this;\n  }\n\n  emit(name, ...args) {\n    // copy so a listener that unsubscribes mid-emit doesn't skip others\n    for (const fn of [...(this.events.get(name) ?? [])]) fn.apply(this, args);\n    return this;\n  }\n\n  once(name, fn) {\n    const wrap = (...args) => { this.off(name, wrap); fn.apply(this, args); };\n    return this.on(name, wrap);\n  }\n}",
+      "lang": "js",
+      "complexity": "`on`/`off` `O(1)`, `emit` `O(k)` for `k` listeners.",
+      "insight": "Two traps: (1) snapshot the listener list before calling, or a handler that calls `off` during `emit` can corrupt the iteration; (2) `once` must remove the **wrapper** it registered, not the original `fn`, so keep a reference to `wrap`.",
+      "link": "https://www.greatfrontend.com/questions/javascript/event-emitter"
+    }
+  },
+  {
+    "id": "impl-008",
+    "topic": "implement",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Polyfill `Promise.all(promises)`: return a promise that resolves to an array of results **in input order** once every input settles, or rejects as soon as any input rejects. Non-promise values should pass through. Example: `promiseAll([1, Promise.resolve(2), 3])` → `[1, 2, 3]`.",
+    "code": "promiseAll([Promise.resolve(1), 2, Promise.resolve(3)])\n  .then((r) => console.log(r)); // [1, 2, 3]",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Wrap each input in `Promise.resolve` and write results by index, counting down.** Keep a `remaining` counter; on each fulfilment store the value at its original index and decrement; resolve when the counter hits zero. Forward any rejection straight to the outer `reject` for short-circuit behaviour. Resolve immediately for an empty array.",
+      "code": "function promiseAll(promises) {\n  return new Promise((resolve, reject) => {\n    const results = [];\n    let remaining = promises.length;\n    if (remaining === 0) return resolve(results);\n    promises.forEach((p, i) => {\n      Promise.resolve(p).then((value) => {\n        results[i] = value;\n        if (--remaining === 0) resolve(results);\n      }, reject);\n    });\n  });\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(n)` space for the results.",
+      "insight": "Order comes from writing `results[i]` by index, **not** from `push` (completion order would scramble it). The counter is needed because a promise can resolve with `undefined`, so you can't detect completeness by scanning for filled slots. Once rejected, a promise is settled, so extra `reject` calls are harmless no-ops.",
+      "link": "https://www.greatfrontend.com/questions/javascript/promise-all"
+    }
+  },
+  {
+    "id": "impl-009",
+    "topic": "implement",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Implement `deepEqual(a, b)` — structural equality for JSON-like values (primitives, nested objects, arrays). Example: `deepEqual({ a: [1, 2], b: { c: 3 } }, { a: [1, 2], b: { c: 3 } })` → `true`, but `deepEqual({ a: 1 }, { a: 1, b: 2 })` → `false`.",
+    "code": "deepEqual([1, { x: 2 }], [1, { x: 2 }]); // true\ndeepEqual({ a: 1 }, { a: '1' });          // false",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Recursive structural comparison.** Short-circuit with `===` (handles primitives and identical references). If either side isn't a non-null object, they're unequal (already failed `===`). Otherwise compare key counts, then recurse key-by-key, ensuring `b` actually owns each key.",
+      "code": "function deepEqual(a, b) {\n  if (a === b) return true;\n  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {\n    return false;\n  }\n  const keysA = Object.keys(a);\n  const keysB = Object.keys(b);\n  if (keysA.length !== keysB.length) return false;\n  return keysA.every(\n    (k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k])\n  );\n}",
+      "lang": "js",
+      "complexity": "`O(n)` in total nodes, `O(d)` recursion depth.",
+      "insight": "Comparing key **counts** both ways is what catches the `{a:1}` vs `{a:1,b:2}` case. Edge cases this simple version punts on: `NaN` (never `===` itself — use `Object.is` if you want `NaN` equal), and it treats arrays and objects loosely; production code also compares `Date`/`RegExp` and guards against cycles.",
+      "link": "https://www.greatfrontend.com/questions/javascript/deep-equal"
+    }
+  },
+  {
+    "id": "impl-010",
+    "topic": "implement",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Model the **logic** of Tic-Tac-Toe (not the UI): a `move(i)` that places the current player's mark on an empty cell of a 3×3 board, rejects illegal moves, alternates turns, and detects a winner or a draw. Focus on the data model and win check.",
+    "code": "const g = new TicTacToe();\ng.move(0); // X\ng.move(4); // O\ng.move(1); // X\ng.move(5); // O\ng.move(2); // X -> winner 'X' (top row)",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Flat length-9 array as the board + a list of the 8 winning lines.** `move` guards against a finished game or occupied cell, writes the mark, re-checks the eight lines, and flips the turn only if no one won. A win is any line whose three cells hold the same non-empty mark; a full board with no winner is a draw.",
+      "code": "class TicTacToe {\n  constructor() {\n    this.board = Array(9).fill(null);\n    this.turn = 'X';\n    this.winner = null; // 'X' | 'O' | 'draw' | null\n  }\n\n  move(i) {\n    if (this.winner || this.board[i]) return false; // game over or taken\n    this.board[i] = this.turn;\n    this.winner = this.checkWinner();\n    if (!this.winner) this.turn = this.turn === 'X' ? 'O' : 'X';\n    return true;\n  }\n\n  checkWinner() {\n    const lines = [\n      [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows\n      [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols\n      [0, 4, 8], [2, 4, 6],            // diagonals\n    ];\n    for (const [a, b, c] of lines) {\n      if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c]) {\n        return this.board[a];\n      }\n    }\n    return this.board.every(Boolean) ? 'draw' : null;\n  }\n}",
+      "lang": "js",
+      "complexity": "`move` is `O(1)` (8 fixed lines, 9 cells).",
+      "insight": "A flat array indexed 0–8 beats a 2D array for the win check — you precompute the 8 lines once. The turn flip belongs **after** the win check so the winning move doesn't hand the turn to the loser, and re-guarding on `this.winner` freezes the board once the game ends."
+    }
+  },
+  {
+    "id": "impl-011",
+    "topic": "implement",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Implement `promisify(fn)` for a Node-style callback function whose last argument is `(err, result) => ...`. It returns a function that takes the same leading args and returns a promise: reject on `err`, resolve with `result`. Example: `promisify(fs.readFile)('x.txt', 'utf8').then(...)`.",
+    "code": "const read = promisify((path, cb) => cb(null, 'contents of ' + path));\nread('a.txt').then((v) => console.log(v)); // 'contents of a.txt'",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Return a wrapper that appends a callback and bridges it to a `Promise`.** Inside the executor, call the original with the caller's args plus a node-style callback: reject if `err` is truthy, otherwise resolve with the result. Preserve `this` with `fn.apply` so it works on methods.",
+      "code": "function promisify(fn) {\n  return function (...args) {\n    return new Promise((resolve, reject) => {\n      fn.apply(this, [\n        ...args,\n        (err, ...results) => {\n          if (err) reject(err);\n          else resolve(results.length > 1 ? results : results[0]);\n        },\n      ]);\n    });\n  };\n}",
+      "lang": "js",
+      "complexity": "`O(1)` overhead per call.",
+      "insight": "The convention is error-first: the callback's first arg is the error, so `if (err) reject`. Appending the callback via spread (rather than hard-coding arg positions) is what makes it work for any arity. Node's built-in `util.promisify` does exactly this and additionally honours a `[util.promisify.custom]` symbol.",
+      "link": "https://www.greatfrontend.com/questions/javascript/promisify"
+    }
+  },
+  {
+    "id": "impl-012",
+    "topic": "implement",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Implement an `LRUCache` with `get(key)` and `put(key, value)`, both **O(1)**, that evicts the least-recently-used entry when it exceeds `capacity`. `get` counts as a use. Example (capacity 2): `put(1,1); put(2,2); get(1)→1; put(3,3)` evicts key 2; `get(2)→-1`.",
+    "code": "const c = new LRUCache(2);\nc.put(1, 1); c.put(2, 2);\nc.get(1);        // 1  (1 now most-recent)\nc.put(3, 3);     // evicts key 2 (least-recent)\nc.get(2);        // -1\nc.get(3);        // 3",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Exploit `Map`'s insertion-order guarantee.** A JS `Map` iterates in insertion order, so the *first* key is the least-recently-used. On `get`/`put`, delete then re-insert the key to move it to the 'newest' end. On overflow, evict `map.keys().next().value` (the oldest). This gives O(1) without hand-rolling a doubly-linked list.",
+      "code": "class LRUCache {\n  constructor(capacity) {\n    this.capacity = capacity;\n    this.map = new Map();\n  }\n\n  get(key) {\n    if (!this.map.has(key)) return -1;\n    const value = this.map.get(key);\n    this.map.delete(key);   // remove...\n    this.map.set(key, value); // ...re-insert as newest\n    return value;\n  }\n\n  put(key, value) {\n    if (this.map.has(key)) this.map.delete(key);\n    else if (this.map.size >= this.capacity) {\n      this.map.delete(this.map.keys().next().value); // evict oldest\n    }\n    this.map.set(key, value);\n  }\n}",
+      "lang": "js",
+      "complexity": "`O(1)` for both `get` and `put`, `O(capacity)` space.",
+      "insight": "The `Map` insertion-order trick is the interview shortcut; the 'proper' answer is a **hashmap + doubly-linked list** (map key → node, list ordered by recency) which the `Map` version emulates. Key subtlety: `get` must also promote the entry (delete + re-set), and eviction happens only when inserting a genuinely new key.",
+      "link": "https://leetcode.com/problems/lru-cache/"
+    }
+  },
+  {
+    "id": "impl-013",
+    "topic": "implement",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Implement `async retry(fn, times = 3, delay = 100)` that calls the async `fn`, and on rejection retries up to `times` total attempts with **exponential backoff** (wait `delay`, then `2·delay`, `4·delay`, …). If all attempts fail, reject with the last error. Example: an intermittently-failing `fetch` succeeds on attempt 2 without the caller noticing.",
+    "code": "await retry(() => fetch('/flaky'), 3, 200);\n// tries up to 3 times, waiting 200ms then 400ms between them",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Loop with `try/catch` and an attempt counter.** `await fn()` inside `try`; on success return. On failure increment the counter; if it reached `times`, rethrow; otherwise `await` a timeout of `delay * 2 ** (attempt - 1)` (the backoff) and loop again.",
+      "code": "async function retry(fn, times = 3, delay = 100) {\n  let attempt = 0;\n  while (true) {\n    try {\n      return await fn();\n    } catch (err) {\n      attempt++;\n      if (attempt >= times) throw err;\n      const wait = delay * 2 ** (attempt - 1);\n      await new Promise((resolve) => setTimeout(resolve, wait));\n    }\n  }\n}",
+      "lang": "js",
+      "complexity": "`O(times)` calls; total wait grows geometrically with the backoff.",
+      "insight": "`await`-ing a `setTimeout`-wrapped promise is how you 'sleep' in async code. Watch the off-by-one: `times` is the number of *attempts*, so you retry `times - 1` times. Production versions add jitter (randomness) to the backoff to avoid a thundering herd of clients retrying in lockstep."
+    }
+  },
+  {
+    "id": "impl-014",
+    "topic": "implement",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Model the **state machine** for an autocomplete/typeahead (logic only). On input it debounces, then fetches suggestions; it must ignore a stale response when a newer request has since been issued (**race handling**), and support keyboard nav (`move(±1)` with wraparound) and `select()`. Focus on the data model and race/debounce logic.",
+    "code": "const ta = new Typeahead(fetchSuggestions, { delay: 250 });\nta.input('re');   // schedules a fetch after 250ms of quiet\nta.input('rea');  // cancels the previous fetch, schedules a new one\nta.move(1);       // highlight next result\nta.select();      // returns the highlighted item",
+    "lang": "js",
+    "reveal": {
+      "approach": "**Debounce with a timer + a monotonically increasing request id to discard stale responses.** `input` clears the pending timer and reschedules. `search` captures `id = ++this.requestId` before awaiting; when the fetch resolves, it bails if `id !== this.requestId` (a newer request superseded it). Keyboard nav is modular arithmetic over the results array.",
+      "code": "class Typeahead {\n  constructor(fetchFn, { delay = 250 } = {}) {\n    this.fetchFn = fetchFn;\n    this.delay = delay;\n    this.results = [];\n    this.active = -1;      // highlighted index\n    this.timer = null;\n    this.requestId = 0;    // guards against stale responses\n  }\n\n  input(query) {\n    clearTimeout(this.timer);\n    if (!query.trim()) { this.results = []; this.active = -1; return; }\n    this.timer = setTimeout(() => this.search(query), this.delay);\n  }\n\n  async search(query) {\n    const id = ++this.requestId;\n    const data = await this.fetchFn(query);\n    if (id !== this.requestId) return; // stale: a newer request won the race\n    this.results = data;\n    this.active = -1;\n  }\n\n  move(dir) {\n    if (!this.results.length) return;\n    const n = this.results.length;\n    this.active = (this.active + dir + n) % n; // wraparound both directions\n  }\n\n  select() {\n    return this.active >= 0 ? this.results[this.active] : null;\n  }\n}",
+      "lang": "js",
+      "complexity": "`O(1)` per keystroke/nav; one in-flight fetch per settled burst.",
+      "insight": "The race guard is the crux: network responses arrive out of order, so without the `requestId` check a slow response for `'re'` could overwrite the correct results for `'rea'`. Debounce (`clearTimeout` + reschedule) limits *how many* requests you fire; the id check ensures only the **latest** one is allowed to render. `+ n` before `% n` keeps the modulo positive when navigating up from index 0."
+    }
+  }
+]

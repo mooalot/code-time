@@ -1,0 +1,222 @@
+[
+  {
+    "id": "web-001",
+    "topic": "web-platform",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "Which set of HTTP methods is *idempotent* (repeating the request has the same effect as making it once)?",
+    "choices": [
+      "GET, PUT, DELETE (and HEAD) — POST is not",
+      "GET and POST only",
+      "POST, PUT, PATCH — all writes are idempotent",
+      "Only GET, because it never changes anything"
+    ],
+    "answer": 0,
+    "explanation": "Idempotent means N identical requests leave the server in the same state as one. GET (read), PUT (replace with a full representation), and DELETE (target ends up gone) qualify. POST is not — twice usually creates two resources. PATCH is generally not idempotent either. Idempotency is why clients can safely retry PUT/DELETE but must be careful retrying POST."
+  },
+  {
+    "id": "web-002",
+    "topic": "web-platform",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "What is the difference between HTTP `401 Unauthorized` and `403 Forbidden`?",
+    "choices": [
+      "401 = not authenticated (who are you? — log in / bad or missing credentials). 403 = authenticated but not allowed (I know you, you lack permission)",
+      "401 = server error, 403 = client error",
+      "401 = the page doesn't exist, 403 = the server is down",
+      "They are interchangeable synonyms for 'access denied'"
+    ],
+    "answer": 0,
+    "explanation": "401 means authentication is missing or invalid — the correct response is to authenticate (it should include a `WWW-Authenticate` header). 403 means your identity is known and valid but you're not authorized for this resource; re-authenticating won't help. Rule of thumb: 401 = who are you, 403 = you can't do that."
+  },
+  {
+    "id": "web-003",
+    "topic": "web-platform",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Which mapping of status codes is correct?",
+    "choices": [
+      "301 = permanent redirect (cache it, update links); 302 = temporary redirect; 429 = too many requests (rate limited, back off)",
+      "301 = temporary, 302 = permanent, 429 = server error",
+      "301 and 302 both mean 'not found'; 429 means 'unauthorized'",
+      "301 = redirect, 302 = redirect, 429 = 'payment required'"
+    ],
+    "answer": 0,
+    "explanation": "301 is a permanent move — browsers and search engines cache it and update to the new URL, and it can change method semantics. 302 (and 307) is temporary; keep using the original URL. 429 signals rate limiting; clients should honor the `Retry-After` header and back off. (Payment Required is 402; Unauthorized is 401.)"
+  },
+  {
+    "id": "web-004",
+    "topic": "web-platform",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "A cross-origin `fetch` sends `Content-Type: application/json` with a custom `Authorization` header. The browser first fires an `OPTIONS` request. What triggered this preflight?",
+    "choices": [
+      "The request isn't 'simple' — a non-simple Content-Type and/or custom headers force a CORS preflight to check the server permits them",
+      "All cross-origin requests are always preflighted",
+      "The preflight happens because the response was JSON",
+      "Using `fetch` instead of `XMLHttpRequest` always preflights"
+    ],
+    "answer": 0,
+    "explanation": "Simple requests (GET/POST/HEAD with only safelisted headers and a Content-Type of `text/plain`, `application/x-www-form-urlencoded`, or `multipart/form-data`) skip preflight. Adding `application/json` or custom headers like `Authorization` makes it non-simple, so the browser sends an `OPTIONS` preflight. The server must answer with `Access-Control-Allow-Origin/Headers/Methods` for the real request to proceed."
+  },
+  {
+    "id": "web-005",
+    "topic": "web-platform",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "A response includes `ETag: \"abc\"` and `Cache-Control: no-cache`. On the next request the browser sends `If-None-Match: \"abc\"` and the server replies `304 Not Modified`. What did that accomplish?",
+    "choices": [
+      "Revalidation: the cached copy was still fresh, so the server skipped resending the body — saving bandwidth while confirming the cache",
+      "The resource was deleted, so the cache was cleared",
+      "The server rejected the request as unauthorized",
+      "`no-cache` disabled all caching, so nothing was reused"
+    ],
+    "answer": 0,
+    "explanation": "`no-cache` means 'store it, but revalidate before reuse' (not 'don't cache' — that's `no-store`). The browser revalidates by sending the ETag in `If-None-Match`; if it still matches, the server returns a bodyless `304` and the browser serves its cached copy. This saves transferring the payload while guaranteeing freshness."
+  },
+  {
+    "id": "web-006",
+    "topic": "web-platform",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "Which statement about cookies vs. `localStorage` vs. `sessionStorage` is correct?",
+    "choices": [
+      "Cookies are sent automatically on every matching request; localStorage/sessionStorage are JS-only and never sent. sessionStorage is cleared when the tab closes",
+      "All three are automatically attached to HTTP requests",
+      "localStorage is per-tab; sessionStorage persists forever",
+      "Cookies can hold megabytes; localStorage is capped at 4KB"
+    ],
+    "answer": 0,
+    "explanation": "Cookies (≈4KB) ride along on every request to the matching domain/path — which is why they're used for sessions but also why they enable CSRF. Web Storage (≈5–10MB) is accessible only via JavaScript and never auto-sent. localStorage persists across sessions; sessionStorage lives for the tab/session and is cleared on close. Web Storage is readable by any script, so it's vulnerable to XSS token theft."
+  },
+  {
+    "id": "web-007",
+    "topic": "web-platform",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "For a browser SPA, which auth-token storage choice best limits XSS token theft?",
+    "choices": [
+      "A session/JWT in an `HttpOnly`, `Secure`, `SameSite` cookie — JS can't read it, mitigating XSS exfiltration (pair with CSRF defenses)",
+      "`localStorage`, because it's isolated per origin and unreadable by scripts",
+      "A JWT in a regular non-HttpOnly cookie so the SPA can read it easily",
+      "In a global JS variable, which resets on reload and is therefore safe"
+    ],
+    "answer": 0,
+    "explanation": "An `HttpOnly` cookie is invisible to JavaScript, so an XSS payload can't read/exfiltrate the token (its worst case is riding along on requests). `localStorage` is fully readable by any script, so one XSS bug leaks the token. The trade-off: cookies are auto-sent, so you must add CSRF protection (`SameSite=Lax/Strict`, CSRF tokens). Stateless JWTs also can't be easily revoked — keep them short-lived with refresh tokens."
+  },
+  {
+    "id": "web-008",
+    "topic": "web-platform",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "How do XSS and CSRF differ, and what defends each?",
+    "choices": [
+      "XSS = injecting/executing attacker JS in your page (defend: output encoding, CSP, sanitize). CSRF = tricking a logged-in browser into sending a state-changing request (defend: CSRF tokens, SameSite cookies)",
+      "They are the same attack with different names; a CSP stops both",
+      "XSS forges requests using the victim's cookies; CSRF steals passwords via forms",
+      "CSRF runs malicious scripts in the page; XSS submits forged forms"
+    ],
+    "answer": 0,
+    "explanation": "XSS runs attacker-controlled script in your origin, letting it read the DOM, tokens, and act as the user — defend with contextual output encoding, input sanitization, and a Content-Security-Policy. CSRF doesn't run script; it abuses the browser auto-attaching cookies to make the victim unknowingly submit a state-changing request — defend with anti-CSRF tokens and `SameSite` cookies. They're distinct and need distinct defenses."
+  },
+  {
+    "id": "web-009",
+    "topic": "web-platform",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "What does a Content-Security-Policy like `script-src 'self'` primarily protect against, and how?",
+    "choices": [
+      "XSS impact — the browser refuses to execute inline scripts or scripts from disallowed origins, so injected script often won't run even if it lands in the DOM",
+      "CSRF — it blocks forged form submissions from other sites",
+      "SQL injection — it sanitizes database inputs at the browser",
+      "Man-in-the-middle — it encrypts the connection like TLS"
+    ],
+    "answer": 0,
+    "explanation": "CSP is a defense-in-depth header that whitelists where scripts, styles, images, etc. may load from and, crucially, blocks inline `<script>` and `eval` unless explicitly allowed (nonces/hashes). That neutralizes most reflected/stored XSS payloads even when input encoding fails. It does nothing for CSRF, SQLi, or transport encryption — those need SameSite/tokens, parameterized queries, and TLS respectively."
+  },
+  {
+    "id": "web-010",
+    "topic": "web-platform",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "In the browser's rendering pipeline, what's the difference between a *reflow* (layout) and a *repaint*, and why does it matter for performance?",
+    "choices": [
+      "Reflow recomputes geometry/positions of elements (expensive, can cascade); repaint only redraws pixels like color changes (cheaper). Changing layout properties triggers reflow",
+      "Repaint is always more expensive than reflow",
+      "Reflow only happens on page load; repaint happens on scroll",
+      "They are the same step; the browser picks the name at random"
+    ],
+    "answer": 0,
+    "explanation": "A reflow (layout) recalculates sizes/positions and can cascade to the whole subtree — triggered by changing width/height/top, adding DOM, or reading layout (`offsetHeight`) after a write (layout thrashing). A repaint only redraws pixels (e.g. `color`, `background`) with no geometry change. Prefer compositor-only properties (`transform`, `opacity`) for animation, and batch DOM reads/writes to avoid forced synchronous reflows."
+  },
+  {
+    "id": "web-011",
+    "topic": "web-platform",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "When should you reach for *debounce* vs. *throttle*?",
+    "choices": [
+      "Debounce: run once after activity stops (e.g. fire search after typing pauses). Throttle: run at most once per interval during continuous activity (e.g. scroll/resize handlers)",
+      "They are identical; throttle is just the newer name",
+      "Debounce runs on every event; throttle runs only once ever",
+      "Throttle waits for a pause; debounce caps the rate"
+    ],
+    "answer": 0,
+    "explanation": "Debounce collapses a burst into a single trailing call after things go quiet — ideal for search-as-you-type or validating after the user stops. Throttle guarantees a steady maximum rate during a continuous stream — ideal for scroll/resize/mousemove where you want regular-but-limited updates. Choose by whether you want the *final* value (debounce) or *periodic* samples (throttle)."
+  },
+  {
+    "id": "web-012",
+    "topic": "web-platform",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "When would you choose GraphQL over a REST API, and what trade-offs come with it? Talk through it as if in a system-design round.",
+    "reveal": {
+      "answer": "GraphQL shines when clients need flexible, precise data shapes across many related entities — a single query fetches exactly the fields needed, avoiding over-/under-fetching and the round-trip waterfalls that force REST teams into many endpoints or bespoke aggregates. REST shines for simple, resource-oriented CRUD with strong, boring HTTP semantics.",
+      "points": [
+        "GraphQL: one endpoint, client-specified queries → no over/under-fetching; great for varied clients (web + mobile) and deeply nested data",
+        "REST: leverages HTTP caching (URLs + ETag/Cache-Control), status codes, and CDN edge caching out of the box",
+        "GraphQL trade-offs: HTTP caching is harder (usually POST to one URL), N+1 resolver problem (needs DataLoader/batching), query-cost/depth limiting to prevent abuse, more server complexity",
+        "REST trade-offs: over/under-fetching, endpoint proliferation, versioning churn",
+        "Decide by client diversity and data-graph complexity vs. cacheability and operational simplicity"
+      ],
+      "trap": "Saying 'GraphQL is just better/newer.' A strong answer weighs caching, the N+1 problem, and query-cost limiting — not hype."
+    }
+  },
+  {
+    "id": "web-013",
+    "topic": "web-platform",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Design a secure authentication flow for a web app (login → authenticated requests → logout). What are the key decisions and defenses?",
+    "reveal": {
+      "answer": "Authenticate over HTTPS, store a password hash with a slow algorithm (bcrypt/argon2 + per-user salt), and on success issue a session identifier or short-lived token in an HttpOnly, Secure, SameSite cookie. Keep access tokens short-lived and back them with a revocable, rotating refresh token; verify auth on every request server-side and enforce authorization per resource.",
+      "points": [
+        "Transport: HTTPS/TLS everywhere; HSTS. Never send credentials over plaintext",
+        "Password storage: argon2/bcrypt with salt (never plain/SHA-256); rate-limit + lockout on login to slow brute force",
+        "Session token: HttpOnly + Secure + SameSite cookie so JS can't read it (XSS) and it isn't blindly cross-site sent (CSRF); add CSRF tokens for state-changing requests",
+        "Tokens: short-lived access token + rotating refresh token so leaked tokens expire fast and can be revoked (stateless JWTs are hard to revoke)",
+        "Add CSP and output encoding to reduce XSS; MFA for sensitive accounts; log out = invalidate server session / revoke refresh token",
+        "Authorization is separate from authentication — check permissions per resource on every request (401 vs 403)"
+      ],
+      "trap": "Storing JWTs in localStorage 'for convenience' (XSS-exfiltratable), never expiring/revoking tokens, or conflating authentication with authorization."
+    }
+  },
+  {
+    "id": "web-014",
+    "topic": "web-platform",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "You're building a healthcare app (e.g. Rula/Omada/OneImaging) that handles PHI (Protected Health Information). What data-handling practices must you follow, and how does this shape front-end and API design?",
+    "reveal": {
+      "answer": "PHI (names, diagnoses, images, anything identifying a patient's health) is regulated under HIPAA. It must be encrypted in transit and at rest, access-controlled on a least-privilege / need-to-know basis, and every access audit-logged. This constrains what you cache, log, and put in URLs on the client, and pushes you toward strict authorization and data minimization on the API.",
+      "points": [
+        "Encrypt in transit (TLS) and at rest; strict access control (RBAC, least privilege) and audit logging of who accessed what PHI when",
+        "Data minimization: only collect/return the PHI a view actually needs; scope API responses per-user/per-role, never trust the client to filter",
+        "Client hygiene: keep PHI out of URLs/query strings, analytics, error trackers (Sentry), and console/server logs; be careful caching PHI in localStorage or the browser cache (use no-store)",
+        "Sign BAAs with vendors that touch PHI (cloud, logging, email); ensure secure disposal and defined retention",
+        "De-identify/anonymize data for analytics and non-prod environments; breach-notification obligations if PHI leaks"
+      ],
+      "trap": "Treating PHI like ordinary data — logging it, caching it client-side, sending it to third-party analytics/error tools, or relying on client-side filtering for authorization."
+    }
+  }
+]

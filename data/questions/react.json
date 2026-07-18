@@ -1,0 +1,200 @@
+[
+  {
+    "id": "rct-001",
+    "topic": "react",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "During normal rendering, which of these causes a function component to re-render?",
+    "choices": [
+      "Its state changes (`setState`), its parent re-renders, or its consumed context value changes",
+      "Only a direct call to `setState` inside that component",
+      "Any mutation of a variable declared inside the component body",
+      "Any change to `document` or `window` globals it reads"
+    ],
+    "answer": 0,
+    "explanation": "A component re-renders when its own state updates, when its parent re-renders (unless bailed out via `memo`/same element), or when a Context it subscribes to changes. Mutating a plain local variable does not schedule a render — React has no way to observe it."
+  },
+  {
+    "id": "rct-002",
+    "topic": "react",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "Why must hooks like `useState` never be called inside a condition or loop?",
+    "choices": [
+      "React tracks hook state by call order across renders; conditional calls shift that order and misalign state",
+      "Conditionals make hooks run twice and double the state",
+      "It is only a lint style preference with no runtime effect",
+      "Hooks allocate memory that conditionals leak"
+    ],
+    "answer": 0,
+    "explanation": "React associates each hook with its position in the call sequence, not a name. If a hook is skipped on one render, every subsequent hook's stored state shifts by one slot, so `useState` values get returned to the wrong hook. Hooks must run in the same order every render — top level only."
+  },
+  {
+    "id": "rct-003",
+    "topic": "react",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "What distinguishes a *controlled* input from an *uncontrolled* one in React?",
+    "choices": [
+      "Controlled: value is driven by React state via `value`+`onChange`. Uncontrolled: the DOM holds the value, read later via a `ref`",
+      "Controlled inputs are `<input>`; uncontrolled inputs are `<textarea>`",
+      "Controlled inputs cannot be edited by the user",
+      "Uncontrolled inputs are read-only and need `defaultValue` to change"
+    ],
+    "answer": 0,
+    "explanation": "A controlled input's value comes from state, so React is the single source of truth (`value={x}` + `onChange`). An uncontrolled input lets the DOM keep its own value (use `defaultValue` for the initial), and you pull it out with a `ref` when needed. Mixing them (passing `value` with no `onChange`) makes the field read-only and warns."
+  },
+  {
+    "id": "rct-004",
+    "topic": "react",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "What is the difference between `useMemo` and `useCallback`?",
+    "choices": [
+      "`useMemo(fn, deps)` memoizes the *return value* of `fn`; `useCallback(fn, deps)` memoizes the *function itself* — `useCallback(fn, d)` equals `useMemo(() => fn, d)`",
+      "`useMemo` is for numbers, `useCallback` is for strings",
+      "`useCallback` runs after render, `useMemo` runs before render",
+      "They are identical; `useCallback` is just an older alias"
+    ],
+    "answer": 0,
+    "explanation": "`useMemo` caches a computed value between renders while the deps are unchanged; `useCallback` caches a function reference. `useCallback(fn, deps)` is literally sugar for `useMemo(() => fn, deps)`. Both exist to preserve *referential* identity so `memo` children and effect deps don't see a new value every render."
+  },
+  {
+    "id": "rct-005",
+    "topic": "react",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "You store a scroll position in `const pos = useRef(0)` and update it with `pos.current = y` on every scroll event. The number shown on screen never updates. Why, and what's the fix?",
+    "choices": [
+      "Mutating a ref does not trigger a re-render, so the displayed value is stale; use `useState` for anything rendered",
+      "Refs are read-only after the first render",
+      "You must call `pos.forceUpdate()` after assigning",
+      "`useRef` only works for DOM nodes, not numbers"
+    ],
+    "answer": 0,
+    "explanation": "`useRef` gives you a stable mutable container whose changes do NOT schedule a render — that's the whole point (great for values you don't want to re-render on). If a value needs to appear in the UI, it must live in state. Refs are for imperative/escape-hatch data: DOM nodes, timers, previous values, latest-callback."
+  },
+  {
+    "id": "rct-006",
+    "topic": "react",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "The effect below runs once on mount and logs `count` from inside a `setInterval`. `count` is incremented elsewhere. After several increments, what value does the interval keep logging? (Not StrictMode-specific.)",
+    "code": "function Counter() {\n  const [count, setCount] = useState(0);\n  useEffect(() => {\n    const id = setInterval(() => console.log(count), 1000);\n    return () => clearInterval(id);\n  }, []);\n  // ...buttons call setCount(count + 1)\n}",
+    "answers": ["0"],
+    "placeholder": "what does it log?",
+    "explanation": "Classic stale closure. The empty dep array runs the effect exactly once; the interval callback closed over `count` from the first render, where it was `0`. Re-renders create new `count` values but the old interval still references the original binding. Fixes: add `count` to deps (recreate the interval), use `setCount(c => c + 1)`, or read from a ref."
+  },
+  {
+    "id": "rct-007",
+    "topic": "react",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "An effect uses `data` but you wrote `useEffect(() => { fetchThing(data); }, [])`. The `exhaustive-deps` lint rule flags a missing dependency. What real bug is it warning about?",
+    "choices": [
+      "The effect captured the first render's `data` and won't re-run when `data` changes, so it acts on stale values",
+      "Empty deps arrays are forbidden and always crash",
+      "The effect will run on every render, causing an infinite loop",
+      "`fetchThing` must be wrapped in `useMemo` or it throws"
+    ],
+    "answer": 0,
+    "explanation": "`exhaustive-deps` warns that a reactive value read inside the effect isn't in the deps, so the effect won't re-synchronize when it changes — you get stale data. The fix is usually to add the dep (or restructure so the value isn't needed). Silencing the lint without understanding is how stale-closure bugs ship."
+  },
+  {
+    "id": "rct-008",
+    "topic": "react",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "You render a list with `key={index}`, then delete the *first* item. React reuses DOM/state by key. What goes wrong?",
+    "choices": [
+      "Every item's index shifts, so React matches the wrong elements — component state and DOM (e.g. input text, focus) attach to the wrong rows",
+      "Nothing — index keys are the recommended default",
+      "React throws because keys must be strings",
+      "The whole list unmounts and remounts, which is always correct"
+    ],
+    "answer": 0,
+    "explanation": "Keys tell reconciliation which element is 'the same' across renders. With index keys, deleting item 0 makes every remaining item's key point to a different item, so React preserves the wrong internal state/DOM (checkbox state, input text, focus jump to the wrong row). Use a stable unique id from the data as the key."
+  },
+  {
+    "id": "rct-009",
+    "topic": "react",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "In React 18, an onClick handler runs the two updates below (initial `count` is `0`). After one click, what is `count`?",
+    "code": "const [count, setCount] = useState(0);\nfunction handleClick() {\n  setCount(count + 1);\n  setCount(count + 1);\n}",
+    "answers": ["1"],
+    "placeholder": "final value after one click",
+    "explanation": "Both calls read the same `count` (0) from the current render's closure, so both compute `0 + 1 = 1`; React batches them and the last write wins → `1`. To increment twice you must use the functional updater: `setCount(c => c + 1)` twice yields `2`, because each receives the latest queued state."
+  },
+  {
+    "id": "rct-010",
+    "topic": "react",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "You wrapped `<Child>` in `React.memo`, but it still re-renders every time the parent does. The parent passes `style={{color:'red'}}` and `onClick={() => save()}`. Why doesn't `memo` help?",
+    "choices": [
+      "`memo` does a shallow prop compare; the inline object and arrow function are new references each render, so props always look 'changed'",
+      "`React.memo` only works on class components",
+      "`memo` compares by deep equality, which is too slow to matter",
+      "You must also wrap the parent in `memo` for it to work"
+    ],
+    "answer": 0,
+    "explanation": "`React.memo` bails out only when a shallow comparison of props finds them unchanged. Inline object/array/function literals create a brand-new reference on every parent render, so the shallow check always sees a difference. Stabilize them with `useMemo`/`useCallback` (or hoist constants) for `memo` to actually skip the re-render."
+  },
+  {
+    "id": "rct-011",
+    "topic": "react",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Implement a `useDebounce(value, delay)` custom hook: it returns a debounced copy of `value` that only updates after `value` has stopped changing for `delay` ms. Useful for a search box that shouldn't fire a request on every keystroke.",
+    "code": "const debounced = useDebounce(searchText, 300);\nuseEffect(() => { fetchResults(debounced); }, [debounced]);",
+    "reveal": {
+      "approach": "Store the debounced value in state. In an effect keyed on `[value, delay]`, start a `setTimeout` that commits `value` into state after `delay`; return a cleanup that clears the timer. Each new keystroke re-runs the effect, cleanup cancels the pending timer, so the state only updates once the value has been stable for `delay` ms.",
+      "code": "function useDebounce(value, delay) {\n  const [debounced, setDebounced] = useState(value);\n  useEffect(() => {\n    const id = setTimeout(() => setDebounced(value), delay);\n    return () => clearTimeout(id);\n  }, [value, delay]);\n  return debounced;\n}",
+      "lang": "jsx",
+      "complexity": "`O(1)` per update, one timer at a time",
+      "insight": "The effect *cleanup* is the debounce: clearing the previous timer on every change is what collapses a burst of updates into one. Forgetting cleanup leaves many timers and the value flips through every intermediate."
+    }
+  },
+  {
+    "id": "rct-012",
+    "topic": "react",
+    "tier": 3,
+    "type": "predict",
+    "prompt": "In React 18 **StrictMode (development only)**, what does this component log on its initial mount, in order?",
+    "code": "function App() {\n  useEffect(() => {\n    console.log('effect');\n    return () => console.log('cleanup');\n  }, []);\n  return null;\n}",
+    "answers": ["effect cleanup effect", "effect\ncleanup\neffect", "effect, cleanup, effect"],
+    "placeholder": "the log lines in order",
+    "explanation": "StrictMode in dev intentionally mounts, unmounts, and remounts each component once to surface effects that aren't cleanup-safe. So you get: `effect` (mount), `cleanup` (simulated unmount), `effect` (remount). In production it runs only once. The lesson: write effects whose cleanup fully reverses the setup, so double-invocation is harmless."
+  },
+  {
+    "id": "rct-013",
+    "topic": "react",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "A single `<Context.Provider value={{ user, setUser }}>` wraps your app. Even components that only read `user` re-render whenever *anything* in the app updates. What's the root cause and best fix?",
+    "choices": [
+      "The `value` is a new object literal every render, so all consumers re-render; memoize the value and split rarely-changing from frequently-changing context",
+      "Context can only hold primitives, so objects always re-render everything",
+      "You must wrap every consumer in `useMemo` individually",
+      "Providers re-render children only when `children` prop changes, so this can't happen"
+    ],
+    "answer": 0,
+    "explanation": "Every consumer of a context re-renders when the provider's `value` identity changes. An inline `{{ user, setUser }}` is a fresh object each render, so all consumers re-render regardless of what they use. Memoize the value (`useMemo`), and split stable vs. volatile data into separate contexts (or use a selector/store like Zustand) so unrelated updates don't fan out."
+  },
+  {
+    "id": "rct-014",
+    "topic": "react",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "In React Native's New Architecture (Fabric + TurboModules), what fundamentally changes versus the old bridge?",
+    "choices": [
+      "JSI lets JS hold direct references to native objects and call them synchronously, replacing the async, serialized JSON bridge; Fabric renders via a shared C++ tree and TurboModules are lazily loaded",
+      "It removes native code entirely and runs everything in JavaScript",
+      "It replaces React with a different UI library",
+      "It only adds TypeScript types and changes nothing at runtime"
+    ],
+    "answer": 0,
+    "explanation": "The old architecture serialized every JS↔native call as JSON over an async bridge — a throughput and latency bottleneck. The New Architecture uses JSI (JavaScript Interface): JS can hold and synchronously invoke C++/native objects directly. Fabric is the new renderer built on a shared C++ shadow tree (enabling synchronous layout/measurement), and TurboModules load native modules lazily instead of all at startup."
+  }
+]

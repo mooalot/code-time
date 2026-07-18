@@ -1,0 +1,195 @@
+[
+  {
+    "id": "elx-001",
+    "topic": "elixir",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "What does this evaluate to?",
+    "code": "{a, b} = {1, 2}\na + b",
+    "lang": "elixir",
+    "answers": ["3"],
+    "placeholder": "a number",
+    "explanation": "`=` is the MATCH operator, not assignment. The tuple pattern `{a, b}` on the left is matched against `{1, 2}`, binding `a = 1` and `b = 2`. So `a + b` is 3."
+  },
+  {
+    "id": "elx-002",
+    "topic": "elixir",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What is bound to `tail`?",
+    "code": "[head | tail] = [1, 2, 3]\ntail",
+    "lang": "elixir",
+    "answers": ["[2, 3]", "[2,3]"],
+    "placeholder": "a list",
+    "explanation": "The `[head | tail]` pattern splits a list into its first element and the rest. Matching against `[1, 2, 3]` binds `head = 1` and `tail = [2, 3]`. This head/tail destructuring is the basis of list recursion in Elixir."
+  },
+  {
+    "id": "elx-003",
+    "topic": "elixir",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "What does the final line return?",
+    "code": "list = [1, 2, 3]\nList.delete(list, 2)\nlist",
+    "lang": "elixir",
+    "answers": ["[1, 2, 3]", "[1,2,3]"],
+    "placeholder": "a list",
+    "explanation": "Elixir data is immutable. `List.delete/2` returns a NEW list `[1, 3]` and cannot mutate the original, so `list` is still `[1, 2, 3]`. To keep the result you must rebind it: `list = List.delete(list, 2)`. Rebinding a variable is not the same as mutating data."
+  },
+  {
+    "id": "elx-004",
+    "topic": "elixir",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "What does this pipeline return?",
+    "code": "[1, 2, 3, 4]\n|> Enum.filter(fn x -> rem(x, 2) == 0 end)\n|> Enum.map(fn x -> x * 10 end)",
+    "lang": "elixir",
+    "answers": ["[20, 40]", "[20,40]"],
+    "placeholder": "a list",
+    "explanation": "The pipe `|>` feeds the value on its left as the FIRST argument of the function on its right. Filtering for even numbers gives `[2, 4]`, then mapping `* 10` gives `[20, 40]`. Pipelines read top-to-bottom as a data-transformation chain."
+  },
+  {
+    "id": "elx-005",
+    "topic": "elixir",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What happens when this runs?",
+    "code": "{:ok, value} = {:error, \"boom\"}",
+    "lang": "elixir",
+    "answers": ["MatchError", "** (MatchError)", "(MatchError)", "error"],
+    "placeholder": "value or error?",
+    "explanation": "Because `=` is a match, the left pattern `{:ok, value}` must match the right side. The first element `:ok` can't match `:error`, so it raises a `MatchError`. This is exactly how `{:ok, x} = do_thing()` enforces the success case and blows up loudly on failure."
+  },
+  {
+    "id": "elx-006",
+    "topic": "elixir",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Which statement about Elixir's core collections is correct?",
+    "choices": [
+      "Lists are linked lists (O(1) prepend, O(n) index); tuples are fixed-size with fast element access; maps are the general key-value store; keyword lists are ordered lists of `{atom, value}` allowing duplicate keys",
+      "Lists are contiguous arrays with O(1) random access",
+      "Tuples grow and shrink dynamically like lists",
+      "Maps preserve insertion order and permit duplicate keys"
+    ],
+    "answer": 0,
+    "explanation": "Lists are singly-linked (cheap to prepend, linear to index or get length). Tuples are fixed-size and good for fast access and small fixed groupings like `{:ok, value}`. Maps are the go-to key-value structure with unique keys. Keyword lists are lists of 2-tuples with atom keys, ordered and allowing duplicates — commonly used for options."
+  },
+  {
+    "id": "elx-007",
+    "topic": "elixir",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What does `M.sign(-4)` return?",
+    "code": "defmodule M do\n  def sign(n) when n > 0, do: :positive\n  def sign(0), do: :zero\n  def sign(_), do: :negative\nend\n\nM.sign(-4)",
+    "lang": "elixir",
+    "answers": [":negative", "negative"],
+    "placeholder": "an atom",
+    "explanation": "Function clauses are tried top-down. The guard `when n > 0` fails for -4, the literal `0` clause doesn't match, so the catch-all `sign(_)` clause returns `:negative`. Multiple clauses with guards replace if/else branching in Elixir."
+  },
+  {
+    "id": "elx-008",
+    "topic": "elixir",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What does `R.sum([1, 2, 3, 4])` return?",
+    "code": "defmodule R do\n  def sum([]), do: 0\n  def sum([h | t]), do: h + sum(t)\nend\n\nR.sum([1, 2, 3, 4])",
+    "lang": "elixir",
+    "answers": ["10"],
+    "placeholder": "a number",
+    "explanation": "Elixir has no mutable loops, so you recurse. The base clause `sum([]) = 0` stops the recursion; the second clause peels the head off and adds it to the sum of the tail: 1 + (2 + (3 + (4 + 0))) = 10. Pattern matching on `[]` vs `[h | t]` drives the recursion."
+  },
+  {
+    "id": "elx-009",
+    "topic": "elixir",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "You chain several steps that each return `{:ok, val}` or `{:error, reason}`, and want to stop at the first error. Which construct is idiomatic?",
+    "choices": [
+      "`with {:ok, a} <- step1(), {:ok, b} <- step2(a) do ... else err -> ... end` — it short-circuits on the first clause that fails to match",
+      "`cond do ... end`, which matches one value against multiple patterns",
+      "A `case` nested one level per step, which is the only real option",
+      "A chain of `if/else` checking each return value"
+    ],
+    "answer": 0,
+    "explanation": "`with` chains pattern matches for a happy path: each `<-` must match (e.g. `{:ok, _}`); the first that doesn't jumps to the `else`, returning that non-matching value. `case` matches a single expression against patterns, and `cond` is a boolean ladder (like if/else-if). `with` is purpose-built for railway-style pipelines."
+  },
+  {
+    "id": "elx-010",
+    "topic": "elixir",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "In the actor model on the BEAM, how do two Elixir processes coordinate state?",
+    "choices": [
+      "They share no memory — each process is isolated and they communicate by sending immutable messages (`send`/`receive`)",
+      "They read and write shared global variables",
+      "They mutate a common object protected by locks and mutexes",
+      "They are OS threads sharing one heap"
+    ],
+    "answer": 0,
+    "explanation": "BEAM processes are lightweight, isolated, and share nothing — there's no shared mutable memory to lock. Coordination happens by passing copies of immutable messages into each other's mailboxes, which a process reads with `receive`. `spawn` starts a process; this isolation is what makes the concurrency model safe and fault-tolerant."
+  },
+  {
+    "id": "elx-011",
+    "topic": "elixir",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "What is a `GenServer` for?",
+    "choices": [
+      "A generic server abstraction that holds state in a process and handles synchronous `call` and asynchronous `cast` requests via callbacks",
+      "Generating server-side HTML templates",
+      "A drop-in database connection pool and nothing else",
+      "Compiling Elixir source down to native machine code"
+    ],
+    "answer": 0,
+    "explanation": "A GenServer is the OTP behaviour for a stateful server process. You implement callbacks like `init/1`, `handle_call/3` (synchronous, replies to the caller) and `handle_cast/2` (fire-and-forget), and the framework runs the receive loop and state-passing for you. It's the standard building block for anything that needs to hold and serialize access to state."
+  },
+  {
+    "id": "elx-012",
+    "topic": "elixir",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "What does the OTP 'let it crash' philosophy, backed by supervision trees, actually mean?",
+    "choices": [
+      "Rather than defensive error handling everywhere, let a faulty process crash and have its supervisor restart it in a known-good state",
+      "Ignore all errors and hope the system keeps running",
+      "Any error should bring down the whole VM to force a restart",
+      "Wrap every function body in `try/rescue`"
+    ],
+    "answer": 0,
+    "explanation": "Because processes are isolated, one crashing doesn't corrupt others. A supervisor watches its child processes and, per a strategy (e.g. `one_for_one`), restarts a crashed child from a clean initial state. So you write the happy path and delegate recovery to the supervision tree instead of littering code with defensive checks."
+  },
+  {
+    "id": "elx-013",
+    "topic": "elixir",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "In Ecto, what is a changeset primarily used for?",
+    "choices": [
+      "Casting and validating external data before it touches the database, tracking which fields changed and collecting errors",
+      "Opening a raw TCP connection to PostgreSQL",
+      "Rendering HTML forms and nothing else",
+      "Declaring database indexes and constraints"
+    ],
+    "answer": 0,
+    "explanation": "A changeset (`cast/3`, `validate_required/2`, `validate_*`) filters and validates incoming params, records the diff of changed fields, and accumulates errors — separating data validation from the schema. If it's valid, `Repo.insert`/`update` turn it into the actual DB operation; if not, you get the errors back to show the user."
+  },
+  {
+    "id": "elx-014",
+    "topic": "elixir",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Explain what Phoenix LiveView is and when you'd reach for it instead of a client-side JavaScript SPA.",
+    "reveal": {
+      "answer": "LiveView renders interactive UIs from the server. On connect it holds a stateful process per client over a WebSocket; when server-side state (the socket assigns) changes, LiveView computes a minimal HTML diff and pushes it to the browser, which patches the DOM. You get real-time, interactive pages while writing mostly Elixir and little to no custom JavaScript. It shines for CRUD apps, dashboards, forms, and live updates where the round-trip latency to your server is low and the logic naturally lives server-side; a JS SPA still fits better for heavy offline use, rich client-only interactions, or when you must minimize server state per user.",
+      "points": [
+        "Server-rendered and server-stateful: one lightweight process per connected client",
+        "Communicates over a persistent WebSocket, sending minimal DOM diffs, not full pages",
+        "Little/no custom JS — event bindings (phx-click, phx-submit) call server handlers",
+        "Great for real-time dashboards, forms, CRUD, presence, live validation",
+        "Trade-offs: depends on a live connection and low latency; keeps per-user state on the server",
+        "Reach for a JS SPA for offline-first, very rich client interactions, or heavy client-side compute"
+      ],
+      "trap": "Describing it as 'React that runs in the browser'. The defining idea is that state and rendering live on the SERVER and only diffs travel to the client over a socket."
+    }
+  }
+]

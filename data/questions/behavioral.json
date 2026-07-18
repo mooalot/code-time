@@ -1,0 +1,226 @@
+[
+  {
+    "id": "beh-001",
+    "topic": "behavioral",
+    "tier": 1,
+    "type": "flashcard",
+    "prompt": "What is the STAR framework, and how do you use it without sounding robotic?",
+    "reveal": {
+      "points": [
+        "Situation (1-2 sentences of context), Task (what YOU were responsible for), Action (the specific things you did and why), Result (the outcome, ideally quantified + what you learned). It's a structure for making a story land, not a script to recite.",
+        "Weight it toward Action and Result — that's where signal lives. Keep Situation short; interviewers don't need three minutes of backstory.",
+        "Say 'I', not 'we'. They're evaluating your contribution; be precise about which decisions and work were yours on a team effort.",
+        "Have 4-6 flexible stories ready (a conflict, a failure, a lead-without-authority, a hard technical problem, an ambiguity story) that you can re-aim at different questions rather than one canned answer per question."
+      ],
+      "trap": "Narrating endless Situation and 'we did X' with no clear personal Action, or ending with no Result/metric/learning. A story with no outcome reads as 'nothing measurable happened,' and constant 'we' hides whether YOU actually drove anything."
+    }
+  },
+  {
+    "id": "beh-002",
+    "topic": "behavioral",
+    "tier": 1,
+    "type": "flashcard",
+    "prompt": "\"Tell me about yourself\" / walk me through your background.",
+    "reveal": {
+      "points": [
+        "This is a 60-90 second positioning pitch, not your life story. Structure: where you are now + a signature strength, 2-3 highlights that build a narrative toward THIS role, and why you're excited about this company specifically.",
+        "Curate for the audience: lead with the thread that matters to them — deep product/frontend work for a product role, AI or infra work for an AI-forward team, founder/ownership signal (a product you built and ran end-to-end) for a startup. Pick the 2-3 highlights that build a narrative toward THIS role.",
+        "End forward-looking: 'which is why I'm interested in what you're building here' — hand the conversation back and invite the first real question.",
+        "Practice it out loud so it's tight and confident but not memorized-sounding; it sets the tone for the whole loop."
+      ],
+      "trap": "A chronological résumé readout from your first internship onward, or a generic pitch that would fit any company. If nothing in your intro connects to their specific product/mission, you've wasted your strongest framing moment."
+    }
+  },
+  {
+    "id": "beh-003",
+    "topic": "behavioral",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "\"Tell me about a conflict with a coworker.\"",
+    "reveal": {
+      "points": [
+        "Pick a real, low-drama, SUBSTANCE-based disagreement (an engineering or process call), not a personality clash. Show the conflict was about getting to a better outcome.",
+        "Demonstrate you sought to understand their view first — state their position fairly — then made your case with data/trade-offs, and describe how you de-escalated (took it offline, brought in a tiebreaker, ran a small experiment).",
+        "Land on resolution AND a preserved relationship: what you agreed on, what shipped, and that you still worked well together afterward. Bonus if you were partly wrong and adjusted.",
+        "Keep it professional and specific; name the trade-off you were weighing, not the person's flaws."
+      ],
+      "trap": "Choosing a story where the coworker is the villain and you were obviously right, or one with no resolution. Interviewers read 'I was right, they were dumb' as low emotional maturity and someone who'll be hard to work with."
+    }
+  },
+  {
+    "id": "beh-004",
+    "topic": "behavioral",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "\"Tell me about a time you failed, or a bug you caused in production.\"",
+    "reveal": {
+      "points": [
+        "Own it plainly — 'I shipped X, it broke Y' — no diffusing blame onto teammates, tooling, or 'the requirements.' Ownership is the trait being tested.",
+        "Walk the response: how you detected it, contained/mitigated it fast, communicated to stakeholders honestly, and root-caused it. Calm incident handling matters as much as the mistake.",
+        "Close with the SYSTEMIC fix and what changed: a test, a guardrail, a rollout process, a monitor — proof the same class of failure can't recur. That's the difference between a mistake and a lesson.",
+        "Pick a real failure with real stakes; a trivially small one signals you're dodging the question."
+      ],
+      "trap": "The humblebrag ('I worked too hard and burned out') or blaming external factors. Also a story where you fixed the one bug but changed nothing systemically — that shows you'll make the same mistake again."
+    }
+  },
+  {
+    "id": "beh-005",
+    "topic": "behavioral",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "\"Tell me about a time you disagreed with your manager or a decision from above.\"",
+    "reveal": {
+      "points": [
+        "Show you can DISAGREE AND COMMIT: you voiced the concern with reasoning and data privately, and once the call was made you supported it fully and executed well.",
+        "Frame your disagreement around shared goals ('I was worried this would hurt X that we both care about'), not ego or territory. Make it clear you understood their constraints and context.",
+        "Include the outcome honestly — sometimes you were right and they revisited it; sometimes they were right given info you lacked; either way you handled it professionally.",
+        "Pick something with real stakes but appropriate scope; how you escalate and then get on board is the signal."
+      ],
+      "trap": "Either a pushover ('I just did what I was told') or someone who litigated the decision forever and undermined it after the call was made. Both are disqualifying — they want independent judgment plus the maturity to commit."
+    }
+  },
+  {
+    "id": "beh-006",
+    "topic": "behavioral",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "\"What's the hardest technical problem you've solved?\"",
+    "reveal": {
+      "points": [
+        "Pick a problem that was genuinely hard for a clear reason — scale, ambiguity, gnarly constraints, a subtle bug — and make the difficulty legible to a non-expert in a sentence before diving in.",
+        "Show your PROCESS: how you scoped it, the hypotheses you tested, dead ends you ruled out, and the trade-offs behind the approach you chose. The reasoning is the signal, not just the answer.",
+        "Have two or three real stories rehearsed — e.g. a thorny systems or AI problem where the naive approach failed and a better structure/eval loop fixed it, or a hard product you owned end-to-end — and tell each as decisions and constraints, ready to go deeper on any of them.",
+        "End with impact and what made it defensible/maintainable, and be ready to go 2-3 levels deeper when they probe — depth under follow-up is exactly what this question tests."
+      ],
+      "trap": "Choosing something that sounds impressive but you can't explain deeply, or narrating only the happy path with no trade-offs. If you fold under 'why not do it the other way?', it reads as borrowed work rather than yours."
+    }
+  },
+  {
+    "id": "beh-007",
+    "topic": "behavioral",
+    "tier": 1,
+    "type": "flashcard",
+    "prompt": "\"Why do you want to work here?\" (mission/product fit per company)",
+    "reveal": {
+      "points": [
+        "Be specific to THEM: name their product, mission, or a real problem in their space and connect it to your experience. Generic 'you're a great company with smart people' is a non-answer.",
+        "Tie your differentiator to their culture: AI-assisted engineering and LLM tooling for Instructure (Claude Code / AI-in-Rails) or Techcyte (pathology AI); marketplace/data-modeling instinct and ownership for Neighbor; forward-deployed, client-facing problem-solving for Filevine.",
+        "Show you did homework — reference something concrete (a product decision, their domain's constraints, how the role is scoped) that a copy-paste answer couldn't contain.",
+        "Make it two-way: what draws you AND what you'd contribute, so it reads as fit, not flattery."
+      ],
+      "trap": "An answer that would fit any company, or one that's all about what you'll GET (comp, growth, prestige) with nothing about their mission or what you bring. At founder/CTO finals (Neighbor, Distru, Filevine) a generic answer is often the thing that sinks you."
+    }
+  },
+  {
+    "id": "beh-008",
+    "topic": "behavioral",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "\"What's your greatest weakness?\"",
+    "reveal": {
+      "points": [
+        "Name a REAL weakness with genuine downside, then show self-awareness and the concrete system you use to manage it. The growth mechanism is what they're scoring.",
+        "Good shape: 'I used to over-invest in polish / dive into the code before aligning on scope — so now I do X (timebox, write a short design doc first, check in earlier).' Specific corrective behavior, not a vague promise.",
+        "Keep it professional and true; pick something you've actually worked on so you can describe measurable improvement.",
+        "Don't pick a weakness that's core to the job (e.g. 'I'm bad at communicating' for a client-facing FDE role)."
+      ],
+      "trap": "The fake weakness ('I'm a perfectionist / I care too much') — interviewers hear it constantly and read it as evasive. Equally bad: an unmanaged real weakness with no coping strategy, which just sounds like an open risk."
+    }
+  },
+  {
+    "id": "beh-009",
+    "topic": "behavioral",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "\"Tell me about a time you led without authority / drove a project.\"",
+    "reveal": {
+      "points": [
+        "Show initiative: you saw a problem or opportunity, defined the plan, and mobilized people who didn't report to you — through influence, not a title.",
+        "Concrete leadership mechanics: how you built buy-in (aligned on the why, addressed objections), coordinated the work, unblocked people, and kept momentum and communication going.",
+        "Real material: leading a cross-functional build (aligning design and engineering, sequencing scope, owning the trade-offs), or founding and running a product end-to-end where you owned everything from product to on-call.",
+        "Quantify the outcome and credit the team — leadership signal is amplified by generosity, not diminished by it."
+      ],
+      "trap": "Describing being ASSIGNED to lead and just doing the tasks, or claiming a team win as a solo effort. Leadership-without-authority is specifically about influence and ownership when nobody made you do it — miss that and you've answered a different question."
+    }
+  },
+  {
+    "id": "beh-010",
+    "topic": "behavioral",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "\"Walk me through a project end-to-end.\" (the deep-dive — heavily weighted at Figma/Neighbor)",
+    "reveal": {
+      "points": [
+        "Structure it explicitly: Problem (what and why it mattered) → Constraints (deadlines, scale, team, tech, unknowns) → Your key decisions and the alternatives you rejected → Trade-offs you accepted → Outcome with metrics → what you'd do differently.",
+        "Spend most of the time on YOUR decisions and trade-offs — that's the whole point of a deep-dive. Be explicit about what was yours vs. the team's.",
+        "Signpost as you go ('the hardest design decision was X; I chose A over B because…') so the interviewer can steer to what interests them, and invite them to go deeper anywhere.",
+        "Pick a project you can defend to arbitrary depth — architecture, data model, failure modes, why-not-the-other-way — and know your numbers (scale, latency, users, impact)."
+      ],
+      "trap": "A feature tour ('then we built the dashboard, then the settings page') with no decisions, alternatives, or trade-offs — or picking a project so old/shallow you can't survive follow-ups. The interviewer is probing depth and judgment; a narrated changelog gives them neither."
+    }
+  },
+  {
+    "id": "beh-011",
+    "topic": "behavioral",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "\"How do you handle ambiguous or underspecified requirements?\" (Filevine forward-deployed)",
+    "reveal": {
+      "points": [
+        "Start by reducing ambiguity, not by guessing: clarify the actual goal and success criteria, identify the real user and their workflow, and surface assumptions/constraints explicitly with stakeholders.",
+        "Make progress under uncertainty: frame the smallest thing that delivers value, ship a thin slice or prototype to get concrete feedback, and iterate — rather than waiting for a perfect spec that never comes.",
+        "State your assumptions in writing and get cheap confirmation; know which decisions are one-way doors (get those right) vs. reversible (just move). Communicate proactively so stakeholders aren't surprised.",
+        "For a forward-deployed/client-facing role (Filevine), emphasize translating vague business asks into technical decisions on the fly and managing the customer relationship while you do it."
+      ],
+      "trap": "Two failure modes: freezing until someone hands you a complete spec (passive), or barreling ahead on unstated assumptions and building the wrong thing (reckless). They want someone who actively narrows ambiguity AND keeps shipping."
+    }
+  },
+  {
+    "id": "beh-012",
+    "topic": "behavioral",
+    "tier": 1,
+    "type": "flashcard",
+    "prompt": "\"What questions do you have for us?\" — what should you actually ask?",
+    "reveal": {
+      "points": [
+        "Always have 3-5 real questions; 'nope, all good' reads as low interest. Tailor them to the interviewer's role — engineer vs. manager vs. founder get different questions.",
+        "Good territory: what does success look like in this role at 6-12 months; the hardest technical/product challenge the team faces now; how decisions get made and disagreements resolved; how they use AI in their workflow; what surprised you (the interviewer) about working here.",
+        "Use questions to subtly demonstrate you did homework and to surface fit signals YOU care about (team health, on-call, scope, growth) — you're evaluating them too.",
+        "At founder/CTO finals, ask about vision, the bet the company is making, and what would make this hire a home run — it shows you think at their altitude."
+      ],
+      "trap": "Asking only about perks/PTO/WFH before an offer, questions whose answers are on the homepage (shows no research), or having nothing to ask. The questions you ask are themselves a signal of seniority and genuine interest."
+    }
+  },
+  {
+    "id": "beh-013",
+    "topic": "behavioral",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Salary negotiation basics — how do you handle the compensation conversation?",
+    "reveal": {
+      "points": [
+        "Don't anchor first if you can avoid it: deflect early 'what's your number?' with 'I'd like to understand the full scope and comp band first — what range is budgeted for this role?' Let them put a number down.",
+        "Anchor on market data and your leverage (competing offers, scarce skills like the AI/LLM differentiator), and negotiate the whole package — base, equity, sign-on, level/title, start date — not just base salary.",
+        "Stay collaborative and unemotional: you're problem-solving toward a yes, not fighting. Express genuine enthusiasm for the role while you negotiate; that keeps goodwill.",
+        "Get the final offer IN WRITING before you accept or resign anywhere, and never give notice on a verbal promise. Silence is a tool — you don't have to fill every pause."
+      ],
+      "trap": "Blurting your number first and anchoring yourself low, accepting the first offer immediately (they usually expect a counter), or negotiating aggressively/adversarially and souring the relationship before day one. Also: resigning on a verbal offer that later changes."
+    }
+  },
+  {
+    "id": "beh-014",
+    "topic": "behavioral",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "How do you talk about NDA-sensitive or confidential work in an interview?",
+    "reveal": {
+      "points": [
+        "Talk about DECISIONS, TRADE-OFFS, and your reasoning — not proprietary implementation details, secret metrics, code, or customer data. The interviewer wants your judgment, which you can convey without leaking anything.",
+        "Abstract appropriately: 'a real-time multi-tenant system with strict isolation requirements' instead of the exact architecture; describe the class of problem and your approach, and use rough/relative numbers ('cut latency roughly in half') rather than exact confidential figures.",
+        "Signal integrity by naming the boundary out loud: 'I can't share specifics under NDA, but the interesting decision was…' — respecting confidentiality is itself a positive signal about how you'll treat THEIR secrets.",
+        "Prepare in advance which stories you can tell and at what altitude, so you're not improvising the line between shareable and not under pressure."
+      ],
+      "trap": "Two opposite failures: over-sharing confidential details (which makes the interviewer wonder what you'll leak about them), or hiding behind 'it's confidential' so completely that you convey nothing and seem to have no real depth. The skill is discussing substance at a safe altitude."
+    }
+  }
+]

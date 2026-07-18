@@ -1,0 +1,245 @@
+[
+  {
+    "id": "grp-001",
+    "topic": "dsa-graphs",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Return the maximum depth (number of nodes on the longest root-to-leaf path) of a binary tree. Example: `[3,9,20,null,null,15,7]` → `3`.",
+    "reveal": {
+      "approach": "**DFS recursion (post-order).** A node’s depth is `1 + max(depth(left), depth(right))`; an empty subtree has depth 0. The recursion bubbles the answer up from the leaves.",
+      "code": "function maxDepth(root) {\n  if (!root) return 0;\n  return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(h)` space for the recursion stack (h = height).",
+      "insight": "This is the template for nearly every tree problem: solve children first (DFS post-order), then combine at the parent.",
+      "link": "https://leetcode.com/problems/maximum-depth-of-binary-tree/"
+    }
+  },
+  {
+    "id": "grp-002",
+    "topic": "dsa-graphs",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Invert a binary tree (mirror it: swap every node’s left and right child). Example: `[4,2,7,1,3,6,9]` → `[4,7,2,9,6,3,1]`.",
+    "reveal": {
+      "approach": "**DFS recursion.** Swap the two children of each node, recursing into both subtrees. Works top-down or bottom-up since the swap and the recursion are independent.",
+      "code": "function invertTree(root) {\n  if (!root) return null;\n  [root.left, root.right] = [invertTree(root.right), invertTree(root.left)];\n  return root;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(h)` space (recursion stack).",
+      "insight": "Every node is visited once and its children swapped — the recursion just applies that local operation everywhere.",
+      "link": "https://leetcode.com/problems/invert-binary-tree/"
+    }
+  },
+  {
+    "id": "grp-003",
+    "topic": "dsa-graphs",
+    "tier": 1,
+    "type": "dsa",
+    "prompt": "Return the in-order traversal of a binary tree’s values. Also state how pre-, in-, and post-order differ. Example: tree `[1,null,2,3]` → in-order `[1,3,2]`.",
+    "reveal": {
+      "approach": "**DFS with three orderings.** They differ only in *when* you visit the node relative to its children: **pre-order** = node, left, right; **in-order** = left, node, right; **post-order** = left, right, node. In-order on a BST yields values in sorted order.",
+      "code": "function inorder(root, out = []) {\n  if (!root) return out;\n  inorder(root.left, out);\n  out.push(root.val);\n  inorder(root.right, out);\n  return out;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(h)` space (recursion stack; an explicit stack gives the iterative version).",
+      "insight": "Pick the order by when the parent’s work must happen: pre-order to copy/serialize top-down, post-order to free/aggregate bottom-up, in-order to read a BST sorted.",
+      "link": "https://leetcode.com/problems/binary-tree-inorder-traversal/"
+    }
+  },
+  {
+    "id": "grp-004",
+    "topic": "dsa-graphs",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "You need the shortest path (fewest edges) from a source to a target in an **unweighted** graph. Which traversal is the right default, and why?",
+    "choices": [
+      "BFS — it explores nodes in increasing distance order, so the first time it reaches the target it is via a shortest path",
+      "DFS — it always discovers the shortest path before any longer one",
+      "Either works identically; the choice is arbitrary for shortest paths",
+      "BFS, because it always uses less memory than DFS on every graph"
+    ],
+    "answer": 0,
+    "explanation": "BFS visits level by level using a queue, so the first time it dequeues the target it has reached it with the fewest edges. DFS uses a stack/recursion and can plunge down a long branch first, finding a longer path before a shorter one. DFS shines for exhaustive exploration, cycle detection, and topological order — but the last option is also wrong, since BFS’s wide frontier can use *more* memory than DFS."
+  },
+  {
+    "id": "grp-005",
+    "topic": "dsa-graphs",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Return the level-order (breadth-first) traversal of a binary tree as a list of levels. Example: `[3,9,20,null,null,15,7]` → `[[3],[9,20],[15,7]]`.",
+    "reveal": {
+      "approach": "**BFS with a queue, level by level.** Process the tree one level at a time: record the current queue size, dequeue exactly that many nodes into the level array, enqueuing their children for the next round.",
+      "code": "function levelOrder(root) {\n  if (!root) return [];\n  const res = [], queue = [root];\n  while (queue.length) {\n    const size = queue.length;\n    const level = [];\n    for (let i = 0; i < size; i++) {\n      const node = queue.shift();\n      level.push(node.val);\n      if (node.left) queue.push(node.left);\n      if (node.right) queue.push(node.right);\n    }\n    res.push(level);\n  }\n  return res;\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(w)` space (w = max width of a level).",
+      "insight": "Snapshotting `queue.length` at the start of each iteration is what cleanly separates one level from the next. (`shift` is O(n); a head index avoids that for large inputs.)",
+      "link": "https://leetcode.com/problems/binary-tree-level-order-traversal/"
+    }
+  },
+  {
+    "id": "grp-006",
+    "topic": "dsa-graphs",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Return `true` if a binary tree is a valid BST (every left descendant < node < every right descendant). Example: `[2,1,3]` → `true`; `[5,1,4,null,null,3,6]` → `false`.",
+    "reveal": {
+      "approach": "**DFS with min/max bounds.** Recurse carrying an open interval `(low, high)` that each node’s value must fall inside. Going left tightens the upper bound to the node’s value; going right tightens the lower bound. A node outside its bounds fails.",
+      "code": "function isValidBST(root, low = -Infinity, high = Infinity) {\n  if (!root) return true;\n  if (root.val <= low || root.val >= high) return false;\n  return isValidBST(root.left, low, root.val) &&\n         isValidBST(root.right, root.val, high);\n}",
+      "lang": "js",
+      "complexity": "`O(n)` time, `O(h)` space (recursion stack).",
+      "insight": "The classic trap is only comparing a node to its direct children — a deep descendant can still violate the BST property. Bounds propagate the constraint all the way down.",
+      "link": "https://leetcode.com/problems/validate-binary-search-tree/"
+    }
+  },
+  {
+    "id": "grp-007",
+    "topic": "dsa-graphs",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given nodes `p` and `q` in a **binary search tree**, return their lowest common ancestor (the deepest node that has both as descendants). Example: in a BST rooted at 6, LCA of 2 and 8 is 6; LCA of 2 and 4 is 2.",
+    "reveal": {
+      "approach": "**Walk down using the BST ordering.** Starting at the root: if both `p` and `q` are smaller than the current node, go left; if both are larger, go right; otherwise the split point (or a match) is the LCA. No recursion or extra storage needed.",
+      "code": "function lowestCommonAncestor(root, p, q) {\n  let node = root;\n  while (node) {\n    if (p.val < node.val && q.val < node.val) node = node.left;\n    else if (p.val > node.val && q.val > node.val) node = node.right;\n    else return node;\n  }\n}",
+      "lang": "js",
+      "complexity": "`O(h)` time, `O(1)` space (h = height).",
+      "insight": "The BST invariant turns LCA into a simple descent: the first node where `p` and `q` fall on opposite sides (or one equals the node) is their split point.",
+      "link": "https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/"
+    }
+  },
+  {
+    "id": "grp-008",
+    "topic": "dsa-graphs",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given a grid of `\"1\"` (land) and `\"0\"` (water), count the islands (land cells connected 4-directionally). Example: a grid with two separated land blobs → `2`.",
+    "reveal": {
+      "approach": "**DFS/BFS flood fill.** Scan every cell; when you hit an unvisited `\"1\"`, increment the island count and flood-fill its whole connected component (marking cells as visited by sinking them to `\"0\"`) so it’s counted once.",
+      "code": "function numIslands(grid) {\n  const rows = grid.length, cols = grid[0].length;\n  let count = 0;\n  function dfs(r, c) {\n    if (r < 0 || c < 0 || r >= rows || c >= cols || grid[r][c] === '0') return;\n    grid[r][c] = '0';\n    dfs(r + 1, c); dfs(r - 1, c); dfs(r, c + 1); dfs(r, c - 1);\n  }\n  for (let r = 0; r < rows; r++) {\n    for (let c = 0; c < cols; c++) {\n      if (grid[r][c] === '1') { count++; dfs(r, c); }\n    }\n  }\n  return count;\n}",
+      "lang": "js",
+      "complexity": "`O(rows · cols)` time, `O(rows · cols)` worst-case space (recursion/stack).",
+      "insight": "Sinking visited land in place avoids a separate `visited` set. BFS with a queue works identically and avoids deep recursion on huge grids.",
+      "link": "https://leetcode.com/problems/number-of-islands/"
+    }
+  },
+  {
+    "id": "grp-009",
+    "topic": "dsa-graphs",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "There are `numCourses` courses; `prerequisites[i] = [a, b]` means you must take `b` before `a`. Return `true` if you can finish all courses. Example: `2, [[1,0]]` → `true`; `2, [[1,0],[0,1]]` → `false` (cycle).",
+    "reveal": {
+      "approach": "**Topological sort via Kahn’s algorithm (BFS on in-degrees).** Build an adjacency list and count in-degrees. Queue every course with in-degree 0, process it, and decrement its neighbors’ in-degrees, enqueuing any that reach 0. If you process all `numCourses`, there’s no cycle.",
+      "code": "function canFinish(numCourses, prerequisites) {\n  const indegree = new Array(numCourses).fill(0);\n  const adj = Array.from({ length: numCourses }, () => []);\n  for (const [course, pre] of prerequisites) {\n    adj[pre].push(course);\n    indegree[course]++;\n  }\n  const queue = [];\n  for (let i = 0; i < numCourses; i++) if (indegree[i] === 0) queue.push(i);\n  let seen = 0;\n  while (queue.length) {\n    const node = queue.shift();\n    seen++;\n    for (const next of adj[node]) {\n      if (--indegree[next] === 0) queue.push(next);\n    }\n  }\n  return seen === numCourses;\n}",
+      "lang": "js",
+      "complexity": "`O(V + E)` time, `O(V + E)` space.",
+      "insight": "A directed graph has a valid ordering iff it is acyclic; Kahn’s algorithm detects a cycle exactly when fewer than V nodes get processed.",
+      "link": "https://leetcode.com/problems/course-schedule/"
+    }
+  },
+  {
+    "id": "grp-010",
+    "topic": "dsa-graphs",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given a reference to a node in a connected undirected graph (each node has `val` and a `neighbors` list), return a deep copy of the entire graph.",
+    "reveal": {
+      "approach": "**BFS/DFS traversal with an original→clone hash map.** The map both remembers which nodes are already cloned (handling cycles) and lets you wire clone neighbors. Clone a node on first sight, then for each neighbor ensure its clone exists and link it.",
+      "code": "function cloneGraph(node) {\n  if (!node) return null;\n  const clones = new Map();\n  clones.set(node, new Node(node.val));\n  const queue = [node];\n  while (queue.length) {\n    const cur = queue.shift();\n    for (const nb of cur.neighbors) {\n      if (!clones.has(nb)) {\n        clones.set(nb, new Node(nb.val));\n        queue.push(nb);\n      }\n      clones.get(cur).neighbors.push(clones.get(nb));\n    }\n  }\n  return clones.get(node);\n}",
+      "lang": "js",
+      "complexity": "`O(V + E)` time, `O(V)` space.",
+      "insight": "The visited map keyed by the original node is what prevents infinite loops on cycles and guarantees exactly one clone per node.",
+      "link": "https://leetcode.com/problems/clone-graph/"
+    }
+  },
+  {
+    "id": "grp-011",
+    "topic": "dsa-graphs",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "In a grid of `0` (open) and `1` (wall), return the length of the shortest path from `start` to `target` moving 4-directionally through open cells, or `-1` if unreachable. Example: a 3×3 open grid, corner to corner → `4`.",
+    "reveal": {
+      "approach": "**BFS from the start.** Because every move costs 1 (unweighted), BFS expands cells in order of distance, so the first time it reaches `target` the accumulated step count is the shortest path. A `seen` set prevents revisiting.",
+      "code": "function shortestPath(grid, start, target) {\n  const rows = grid.length, cols = grid[0].length;\n  const queue = [[start[0], start[1], 0]];\n  const seen = new Set([start[0] + ',' + start[1]]);\n  while (queue.length) {\n    const [r, c, d] = queue.shift();\n    if (r === target[0] && c === target[1]) return d;\n    for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) {\n      const nr = r + dr, nc = c + dc;\n      if (nr >= 0 && nc >= 0 && nr < rows && nc < cols &&\n          grid[nr][nc] === 0 && !seen.has(nr + ',' + nc)) {\n        seen.add(nr + ',' + nc);\n        queue.push([nr, nc, d + 1]);\n      }\n    }\n  }\n  return -1;\n}",
+      "lang": "js",
+      "complexity": "`O(rows · cols)` time and space.",
+      "insight": "Mark a cell seen *when you enqueue it*, not when you dequeue it, or the same cell gets queued many times. For weighted edges you would need Dijkstra instead.",
+      "link": "https://leetcode.com/problems/shortest-path-in-binary-matrix/"
+    }
+  },
+  {
+    "id": "grp-012",
+    "topic": "dsa-graphs",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Implement Conway’s Game of Life: update an `m×n` board of `1` (live) / `0` (dead) to its next generation **in place**. Rules: a live cell with 2–3 live neighbors survives; a dead cell with exactly 3 live neighbors is born; all else die/stay dead. **Tier 3 (stretch) — Rula’s signature problem.**",
+    "reveal": {
+      "approach": "**Grid simulation with bit encoding for in-place update.** The trap is that updates must be simultaneous. Encode the next state in a second bit: bit 0 holds the current state, bit 1 the next. Count neighbors with `cell & 1` (unaffected by writes to bit 1), set bit 1 per the rules, then right-shift every cell to reveal the new generation.",
+      "code": "function gameOfLife(board) {\n  const rows = board.length, cols = board[0].length;\n  for (let r = 0; r < rows; r++) {\n    for (let c = 0; c < cols; c++) {\n      let live = 0;\n      for (let dr = -1; dr <= 1; dr++) {\n        for (let dc = -1; dc <= 1; dc++) {\n          if (dr === 0 && dc === 0) continue;\n          const nr = r + dr, nc = c + dc;\n          if (nr >= 0 && nc >= 0 && nr < rows && nc < cols) {\n            live += board[nr][nc] & 1; // read current state from bit 0\n          }\n        }\n      }\n      if (board[r][c] & 1) {\n        if (live === 2 || live === 3) board[r][c] |= 2; // survives\n      } else if (live === 3) {\n        board[r][c] |= 2; // born\n      }\n    }\n  }\n  for (let r = 0; r < rows; r++)\n    for (let c = 0; c < cols; c++)\n      board[r][c] >>= 1; // next state becomes current\n}",
+      "lang": "js",
+      "complexity": "`O(rows · cols)` time (8 neighbor checks per cell), `O(1)` extra space.",
+      "insight": "Reading neighbors with `& 1` while writing the future into bit 1 lets one pass mutate the grid without corrupting the counts — the alternative is copying the whole board.",
+      "link": "https://leetcode.com/problems/game-of-life/"
+    }
+  },
+  {
+    "id": "grp-013",
+    "topic": "dsa-graphs",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Design a trie (prefix tree) supporting `insert(word)` and `autocomplete(prefix)` that returns all stored words starting with `prefix`. Example: insert `apple`, `app`, `apply`; `autocomplete(\"app\")` → `[\"app\",\"apple\",\"apply\"]`. **Tier 3 (stretch) — Figma-flavored.**",
+    "reveal": {
+      "approach": "**Trie (prefix tree) + DFS collection.** Each node is a map from a character to a child node, plus an end-of-word flag. `insert` walks/creates a path of nodes. `autocomplete` descends to the node at the end of the prefix, then DFS-collects every word in that subtree.",
+      "code": "class Trie {\n  constructor() { this.root = {}; }\n  insert(word) {\n    let node = this.root;\n    for (const ch of word) node = (node[ch] ??= {});\n    node.end = true;\n  }\n  autocomplete(prefix) {\n    let node = this.root;\n    for (const ch of prefix) {\n      node = node[ch];\n      if (!node) return [];\n    }\n    const out = [];\n    (function dfs(n, path) {\n      if (n.end) out.push(prefix + path);\n      for (const ch in n) if (ch !== 'end') dfs(n[ch], path + ch);\n    })(node, '');\n    return out;\n  }\n}",
+      "lang": "js",
+      "complexity": "`insert` `O(L)` for word length L; `autocomplete` `O(P + total characters in the matches)`. Space is `O(total characters inserted)`.",
+      "insight": "A trie shares common prefixes, so lookup cost depends on word length, not the number of words stored — ideal for autocomplete and typeahead. (Storing 26 explicit child slots avoids the `end` key collision on unusual alphabets.)",
+      "link": "https://leetcode.com/problems/implement-trie-prefix-tree/"
+    }
+  },
+  {
+    "id": "grp-014",
+    "topic": "dsa-graphs",
+    "tier": 3,
+    "type": "flashcard",
+    "prompt": "Design undo/redo for an editor (e.g. a Figma-style canvas). How do you structure it so any action can be reversed and re-applied? **Tier 3 (stretch) — Figma-flavored.**",
+    "reveal": {
+      "answer": "Model each user action as a **command** object exposing `apply()` and `undo()` (the Command pattern). Maintain two stacks: an **undo stack** of executed commands and a **redo stack**. Executing a new action pushes its command onto the undo stack and clears the redo stack. Undo pops the undo stack, calls `undo()`, and pushes onto the redo stack; redo does the reverse. Each command captures just enough state (the delta, or before/after values) to reverse itself.",
+      "points": [
+        "Command pattern: encapsulate each edit as an object with `apply()`/`undo()` (and the data needed to reverse it).",
+        "Two stacks — undo and redo; a fresh action clears the redo stack.",
+        "Store minimal diffs/deltas, not full document snapshots, to bound memory (cap history depth if needed).",
+        "Batch related mutations into one composite command so a single Ctrl+Z undoes a whole gesture (e.g. a drag).",
+        "Both stack operations are `O(1)`; memory is `O(history size × delta size)`."
+      ],
+      "trap": "Storing a full deep copy of the document on every keystroke — that blows up memory and time. Weak answers also forget to clear the redo stack when a new action is taken after undoing, which corrupts the redo history."
+    }
+  },
+  {
+    "id": "grp-015",
+    "topic": "dsa-graphs",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given `n` nodes labeled `0..n-1` and an `edges` list for an undirected graph, return the number of connected components. Example: `n=5, edges=[[0,1],[1,2],[3,4]]` → `2`.",
+    "reveal": {
+      "approach": "**Union-Find (Disjoint Set Union).** Start with `count = n` and each node its own parent. For each edge, `find` both endpoints’ roots; if they differ, union them and decrement `count`. Use path compression so `find` is near-O(1).",
+      "code": "function countComponents(n, edges) {\n  const parent = Array.from({ length: n }, (_, i) => i);\n  function find(x) {\n    while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }\n    return x;\n  }\n  let count = n;\n  for (const [a, b] of edges) {\n    const ra = find(a), rb = find(b);\n    if (ra !== rb) { parent[ra] = rb; count--; }\n  }\n  return count;\n}",
+      "lang": "js",
+      "complexity": "~`O((n + e)·α(n))` ≈ linear time, `O(n)` space.",
+      "insight": "DSU is the go-to for connectivity, cycle detection, and \"redundant connection\" problems. A BFS/DFS flood fill also works in `O(n + e)` — union-find shines when edges arrive incrementally.",
+      "link": "https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/"
+    }
+  },
+  {
+    "id": "grp-016",
+    "topic": "dsa-graphs",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Return the k-th largest element in an unsorted array. Example: `nums=[3,2,1,5,6,4], k=2` → `5`.",
+    "reveal": {
+      "approach": "**Min-heap of size k.** Push each number; whenever the heap exceeds size `k`, pop the smallest. After processing, the heap’s root is the k-th largest. (Alternative: **quickselect**, `O(n)` average.)",
+      "code": "class MinHeap {\n  constructor() { this.a = []; }\n  size() { return this.a.length; }\n  peek() { return this.a[0]; }\n  push(v) {\n    const a = this.a; a.push(v); let i = a.length - 1;\n    while (i > 0) { const p = (i - 1) >> 1; if (a[p] <= a[i]) break; [a[p], a[i]] = [a[i], a[p]]; i = p; }\n  }\n  pop() {\n    const a = this.a, top = a[0], last = a.pop();\n    if (a.length) { a[0] = last; let i = 0;\n      for (;;) { let l = 2*i+1, r = 2*i+2, s = i;\n        if (l < a.length && a[l] < a[s]) s = l;\n        if (r < a.length && a[r] < a[s]) s = r;\n        if (s === i) break; [a[s], a[i]] = [a[i], a[s]]; i = s; } }\n    return top;\n  }\n}\nfunction findKthLargest(nums, k) {\n  const h = new MinHeap();\n  for (const n of nums) { h.push(n); if (h.size() > k) h.pop(); }\n  return h.peek();\n}",
+      "lang": "js",
+      "complexity": "`O(n log k)` time, `O(k)` space. Quickselect is `O(n)` average, `O(n²)` worst.",
+      "insight": "JS has no built-in heap, so knowing the array-based binary-heap sift-up/sift-down is the real test. Size-k min-heap generalizes to \"top-K\" and streaming; quickselect is faster on a static array.",
+      "link": "https://leetcode.com/problems/kth-largest-element-in-an-array/"
+    }
+  }
+]

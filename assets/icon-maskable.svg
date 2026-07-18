@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="DryRun">
+  <rect width="512" height="512" fill="#0d1117"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="30">
+    <path d="M244 190 L182 256 L244 322" stroke="#58a6ff"/>
+    <path d="M268 190 L330 256 L268 322" stroke="#bc8cff"/>
+  </g>
+</svg>
