@@ -170,7 +170,13 @@ function startLesson(topicId) {
   const active = COMPANY_BY_ID[focusCompany()];
   if (active && topicId !== 'due') title += ` · ${active.name}`;
   if (!pool.length) return;
-  const questions = S.pickLesson(pool, LESSON_SIZE);
+  // Review pulls all-due; other lessons reserve half the slots for fresh
+  // material and skip what was just served so mixes stop repeating.
+  const questions = S.pickLesson(pool, LESSON_SIZE, {
+    exclude: S.recentServedSet(),
+    reviewCap: topicId === 'due' ? LESSON_SIZE : Math.ceil(LESSON_SIZE / 2),
+  });
+  S.noteServed(questions.map((q) => q.id));
   runLesson(questions, title);
 }
 

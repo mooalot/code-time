@@ -171,13 +171,40 @@ export function dueCount(questionIds) {
   return questionIds.filter((id) => isDue(id)).length;
 }
 
-// Build a lesson: due reviews first, then unseen, then weakest-box, shuffled
-// within each priority class.
-export function pickLesson(questions, n = 10) {
+// In-memory (this session only): ids served in recent lessons, so consecutive
+// lessons — especially the Daily Mix — don't resurface the same questions right
+// away. Rolls off after a few lessons' worth so spaced repetition still works.
+let recentServed = [];
+const RECENT_CAP = 32;
+export function noteServed(ids) {
+  for (const id of ids) recentServed.push(id);
+  if (recentServed.length > RECENT_CAP) recentServed = recentServed.slice(-RECENT_CAP);
+}
+export function recentServedSet() {
+  return new Set(recentServed);
+}
+export function clearRecentServed() {
+  recentServed = [];
+}
+
+// Build a lesson. Priority: due reviews, then unseen, then weakest-box.
+// opts.exclude   — ids to avoid resurfacing (recently served); relaxed if that
+//                  would leave too few questions to fill the lesson.
+// opts.reviewCap — max due-review items before the rest of the lesson is
+//                  reserved for fresh/unseen material (defaults to n = no cap).
+//                  The Daily Mix passes ~half of n so reviews can't crowd out
+//                  new questions; leftover due items still top up a short lesson.
+export function pickLesson(questions, n = 10, opts = {}) {
+  const exclude = opts.exclude || new Set();
+  const reviewCap = opts.reviewCap ?? n;
+
+  const fresh = questions.filter((q) => !exclude.has(q.id));
+  const pool = fresh.length >= n ? fresh : questions;
+
   const due = [];
   const unseen = [];
   const rest = [];
-  for (const q of questions) {
+  for (const q of pool) {
     if (isDue(q.id)) due.push(q);
     else if (!isSeen(q.id)) unseen.push(q);
     else rest.push(q);
@@ -185,7 +212,9 @@ export function pickLesson(questions, n = 10) {
   shuffle(due);
   shuffle(unseen);
   rest.sort((a, b) => boxOf(a.id) - boxOf(b.id));
-  const picked = [...due, ...unseen, ...rest].slice(0, n);
+
+  const ordered = [...due.slice(0, reviewCap), ...unseen, ...rest, ...due.slice(reviewCap)];
+  const picked = ordered.slice(0, n);
   shuffle(picked);
   return picked;
 }
@@ -202,5 +231,6 @@ export function resetAll() {
   const company = state.settings?.company ?? 'all';
   state = blank();
   state.settings.company = company;
+  clearRecentServed();
   save();
 }
