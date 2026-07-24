@@ -1,11 +1,11 @@
 // Service worker: network-first with cache fallback. Online you always get the
 // newest questions/code; offline everything still works from cache.
-const CACHE = 'dryrun-v1';
+const CACHE = 'dryrun-v2';
 
 const TOPICS = [
   'js-core', 'async-js', 'typescript', 'react', 'frontend-css', 'web-platform',
   'dsa-arrays', 'dsa-graphs', 'complexity', 'implement', 'practical', 'testing',
-  'system-design', 'sql', 'rails', 'elixir', 'go-python', 'ai-llm', 'behavioral',
+  'system-design', 'sql', 'postgres', 'rails', 'elixir', 'go-python', 'ai-llm', 'behavioral',
 ];
 
 const CORE = [

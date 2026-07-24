@@ -202,5 +202,163 @@
       "complexity": "`O(n log n)` for the partitioned sort, `O(n)` space.",
       "insight": "Window functions are evaluated after WHERE, so you must wrap them to filter on the rank. Use `ROW_NUMBER` for exactly N rows, or `RANK`/`DENSE_RANK` if you want ties for the Nth place included."
     }
+  },
+  {
+    "id": "sql-015",
+    "topic": "sql",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "In what order does SQL *logically* evaluate the clauses of a SELECT? (This explains why a column alias defined in SELECT can't be used in WHERE.)",
+    "choices": [
+      "`FROM` → `WHERE` → `GROUP BY` → `HAVING` → `SELECT` → `ORDER BY` → `LIMIT`",
+      "`SELECT` → `FROM` → `WHERE` → `GROUP BY` → `ORDER BY` — top to bottom, as written",
+      "`WHERE` → `FROM` → `SELECT` → `GROUP BY` → `ORDER BY`",
+      "There is no defined order; the optimizer picks one at random"
+    ],
+    "answer": 0,
+    "explanation": "The writing order isn't the evaluation order: tables come first, rows get filtered, groups form, then SELECT computes its expressions and aliases. That's why `WHERE` can't see a SELECT alias — but `ORDER BY`, which runs *after* SELECT, can. The optimizer rearranges physical execution but must preserve these semantics."
+  },
+  {
+    "id": "sql-016",
+    "topic": "sql",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "`t(a)` = {1, NULL, 3}. What does the query return?",
+    "code": "SELECT COUNT(*) FROM t WHERE a = NULL;",
+    "lang": "sql",
+    "answers": ["0", "zero"],
+    "placeholder": "a number",
+    "explanation": "Comparing anything to NULL with `=` yields UNKNOWN, not true — so *no* row passes the filter and the count is 0 (yes, even the NULL row itself). To match NULLs you must write `WHERE a IS NULL`, which here would give 1. This is one of the most common beginner SQL bugs."
+  },
+  {
+    "id": "sql-017",
+    "topic": "sql",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "What's the difference between `UNION` and `UNION ALL`?",
+    "choices": [
+      "`UNION` removes duplicate rows from the combined result (extra dedup work); `UNION ALL` keeps every row and is faster",
+      "`UNION ALL` also joins the two queries on matching column names",
+      "`UNION` appends columns side-by-side; `UNION ALL` appends rows",
+      "They're identical — `ALL` is legacy syntax"
+    ],
+    "answer": 0,
+    "explanation": "Both stack the rows of two queries with compatible columns. `UNION` then deduplicates the whole result (which costs a sort or hash); `UNION ALL` skips that. Default to `UNION ALL` unless you actually need dedup — it's cheaper and often what you meant."
+  },
+  {
+    "id": "sql-018",
+    "topic": "sql",
+    "tier": 1,
+    "type": "predict",
+    "prompt": "`t(a)` = {1, 1, 2, 3, 3}. What does the query return?",
+    "code": "SELECT COUNT(DISTINCT a) FROM t;",
+    "lang": "sql",
+    "answers": ["3"],
+    "placeholder": "a number",
+    "explanation": "`DISTINCT` collapses duplicates before counting: the distinct values are {1, 2, 3}, so 3. Plain `COUNT(a)` would give 5 (all non-NULL values). `SELECT DISTINCT a FROM t` works the same way at the row level."
+  },
+  {
+    "id": "sql-019",
+    "topic": "sql",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "In `WHERE email LIKE '%@gmail.com'`, what does the `%` mean?",
+    "choices": [
+      "It matches any sequence of characters (including none) — so this finds values *ending* in `@gmail.com`; `_` matches exactly one character",
+      "It matches exactly one character",
+      "It applies the modulo operator to the string",
+      "It marks a query parameter to be filled in later"
+    ],
+    "answer": 0,
+    "explanation": "`%` = any run of characters, `_` = exactly one: `'a%'` is starts-with, `'%a'` is ends-with, `'%a%'` is contains. Performance note: a *leading* `%` defeats a normal B-tree index (nothing to seek on), so contains/ends-with searches on big tables need other tools (trigram indexes, full-text search)."
+  },
+  {
+    "id": "sql-020",
+    "topic": "sql",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Students can enroll in many courses, and each course has many students. How do you model this many-to-many relationship in a relational database?",
+    "choices": [
+      "A join table, e.g. `enrollments(student_id, course_id)`, with a foreign key to each side and typically a unique constraint on the pair",
+      "An array column of course ids on the `students` table",
+      "A `course_id` foreign key column on `students`",
+      "Duplicate the student row once per course they take"
+    ],
+    "answer": 0,
+    "explanation": "A foreign key on `students` allows only *one* course per student — that's one-to-many. Many-to-many always needs a third table where each row is one relationship instance (one enrollment). Bonus: the join table is the natural home for relationship data like `grade` or `enrolled_at`."
+  },
+  {
+    "id": "sql-021",
+    "topic": "sql",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "You run `DELETE FROM users;` — with no `WHERE`. What happens?",
+    "choices": [
+      "Every row in `users` is deleted (the table itself remains) — which is why you always double-check DELETE and UPDATE for a WHERE clause",
+      "Syntax error: DELETE requires a WHERE clause",
+      "The table is dropped entirely, schema included",
+      "Nothing — the database prompts for confirmation first"
+    ],
+    "answer": 0,
+    "explanation": "No WHERE means the statement applies to *every* row — same for `UPDATE`. (`DROP TABLE` removes the table itself; `TRUNCATE` is the fast delete-everything variant.) Safety habit for manual sessions: `BEGIN;` first, run the statement, sanity-check the affected row count, then `COMMIT;` — or `ROLLBACK;` if it's wrong."
+  },
+  {
+    "id": "sql-022",
+    "topic": "sql",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "`scores(score)` = {10, 40, 20, 30}. What does the query return, in order? (comma-separated)",
+    "code": "SELECT score FROM scores ORDER BY score DESC LIMIT 2;",
+    "lang": "sql",
+    "answers": ["40, 30", "40,30"],
+    "placeholder": "e.g. 1, 2",
+    "explanation": "`ORDER BY score DESC` sorts 40, 30, 20, 10; `LIMIT 2` keeps the first two: 40 and 30. Remember: without an ORDER BY, SQL guarantees *no* particular row order — `LIMIT` without `ORDER BY` returns an arbitrary subset."
+  },
+  {
+    "id": "sql-023",
+    "topic": "sql",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "You LEFT JOIN `orders` onto `users` to keep every user, then add `WHERE o.status = 'paid'` — and users with no orders vanish from the result. Why?",
+    "choices": [
+      "For unmatched users, `o.status` is NULL, and `NULL = 'paid'` is not true — the WHERE filtered those rows out, effectively turning the LEFT JOIN into an INNER JOIN. Put the condition in the `ON` clause instead",
+      "LEFT JOIN stops preserving unmatched rows once there's more than one condition",
+      "The database silently rewrote the query as a RIGHT JOIN",
+      "Any JOIN requires HAVING instead of WHERE for filters"
+    ],
+    "answer": 0,
+    "explanation": "The classic LEFT JOIN gotcha. `ON` conditions decide *what matches during the join* (unmatched left rows still survive, NULL-padded); `WHERE` runs *after* the join and drops rows outright. Filters on the right table belong in ON: `ON o.user_id = u.id AND o.status = 'paid'`."
+  },
+  {
+    "id": "sql-024",
+    "topic": "sql",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given `users(id, name)` and `orders(id, user_id, amount)`, return **every** user with their total order amount — users with no orders must appear with `0`, not be missing.",
+    "lang": "sql",
+    "reveal": {
+      "approach": "LEFT JOIN so users without orders survive, GROUP BY the user, SUM the amounts, and COALESCE the NULL sum into 0. This LEFT JOIN + GROUP BY + COALESCE trio is the standard \"report per entity, including empty ones\" pattern.",
+      "code": "SELECT u.id, u.name, COALESCE(SUM(o.amount), 0) AS total\nFROM users u\nLEFT JOIN orders o ON o.user_id = u.id\nGROUP BY u.id, u.name\nORDER BY total DESC;",
+      "lang": "sql",
+      "complexity": "`O(n + m)` with a hash join, plus the grouping pass over the joined rows.",
+      "insight": "Two traps: an INNER JOIN silently drops zero-order users, and `SUM` over only NULL inputs is `NULL`, not `0` — always COALESCE aggregates when unmatched rows are possible."
+    }
+  },
+  {
+    "id": "sql-025",
+    "topic": "sql",
+    "tier": 1,
+    "type": "flashcard",
+    "prompt": "In plain words, explain the four JOIN types — INNER, LEFT, RIGHT, FULL — using `users` and `orders` as the example.",
+    "reveal": {
+      "points": [
+        "INNER: only users who have at least one order — rows that match on both sides.",
+        "LEFT: *all* users; the order columns are NULL for users with no orders.",
+        "RIGHT: *all* orders; user columns are NULL for an order with no matching user (rare in practice — usually rewritten as a LEFT JOIN from the other table).",
+        "FULL (OUTER): everything from both sides, NULL-padded wherever there's no match.",
+        "Mental model: pair up rows that satisfy the ON condition, then add back the unmatched rows from whichever side(s) the join type preserves."
+      ],
+      "trap": "Saying \"LEFT JOIN returns only the left table\" — it returns the matched pairs *too*; the point is that unmatched left rows also survive. And remember a left row that matches 3 right rows appears 3 times."
+    }
   }
 ]

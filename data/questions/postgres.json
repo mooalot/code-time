@@ -1,0 +1,254 @@
+[
+  {
+    "id": "pg-001",
+    "topic": "postgres",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "In Postgres, what's the practical difference between `TEXT` and `VARCHAR(255)`?",
+    "choices": [
+      "Almost none — they're stored identically; `VARCHAR(n)` just adds a length check. Plain `TEXT` is idiomatic Postgres",
+      "`TEXT` is much slower because it's always stored outside the main table",
+      "Indexed columns must be `VARCHAR`, not `TEXT`",
+      "`TEXT` is limited to 255 characters unless configured"
+    ],
+    "answer": 0,
+    "explanation": "Unlike old MySQL folklore, Postgres stores `TEXT` and `VARCHAR` the same way with the same performance. `VARCHAR(n)` only adds a max-length constraint check. If you genuinely need a limit, `TEXT` plus a `CHECK (length(col) <= n)` is often preferred because the limit is easier to change later."
+  },
+  {
+    "id": "pg-002",
+    "topic": "postgres",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "How do you get an auto-incrementing integer primary key in Postgres?",
+    "choices": [
+      "`id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY` (or the older `BIGSERIAL`) — a sequence supplies the next value on each insert",
+      "`id INTEGER AUTO_INCREMENT PRIMARY KEY`, like MySQL",
+      "You can't; ids must be generated in application code",
+      "Use `UUID` — integers can't auto-increment in Postgres"
+    ],
+    "answer": 0,
+    "explanation": "`AUTO_INCREMENT` is MySQL syntax. Postgres backs auto-increment columns with a *sequence*, declared via `GENERATED ... AS IDENTITY` (modern) or `SERIAL`/`BIGSERIAL` (older shorthand). Expect gaps: a rolled-back insert doesn't return its sequence value. UUID keys are a valid alternative design, not a requirement."
+  },
+  {
+    "id": "pg-003",
+    "topic": "postgres",
+    "tier": 1,
+    "type": "mc",
+    "prompt": "You need to add a nullable `nickname` column to an existing `users` table. Which statement does it?",
+    "choices": [
+      "`ALTER TABLE users ADD COLUMN nickname TEXT;`",
+      "`UPDATE users ADD COLUMN nickname TEXT;`",
+      "`INSERT INTO users (nickname) VALUES (NULL);`",
+      "You must create a new table and copy the data over"
+    ],
+    "answer": 0,
+    "explanation": "Schema changes are DDL (`ALTER TABLE`); `UPDATE`/`INSERT` only touch rows, not structure. Nice to know: in modern Postgres, adding a nullable column (or one with a constant default) is a metadata-only change — effectively instant even on a huge table."
+  },
+  {
+    "id": "pg-004",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "For a flexible `metadata` column, why is `JSONB` usually preferred over `JSON` in Postgres?",
+    "choices": [
+      "`JSONB` stores a parsed binary form that supports GIN indexing and fast operators (`@>`, `->>`), while `JSON` is stored as raw text and re-parsed on every access",
+      "`JSON` can't store nested objects or arrays",
+      "`JSONB` preserves key order and duplicate keys exactly as written",
+      "Only `JSONB` validates that the value is legal JSON"
+    ],
+    "answer": 0,
+    "explanation": "Both types validate syntax. `JSON` keeps the exact original text (key order, duplicate keys, whitespace); `JSONB` normalizes into a binary form — that's precisely what makes it indexable and fast to query. Unless you need byte-for-byte fidelity, use `JSONB`."
+  },
+  {
+    "id": "pg-005",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "`emp(name, salary)` = {(a, 300), (b, 300), (c, 200)}. What value of `r` does row `c` get?",
+    "code": "SELECT name,\n       RANK() OVER (ORDER BY salary DESC) AS r\nFROM emp;",
+    "lang": "sql",
+    "answers": ["3"],
+    "placeholder": "a number",
+    "explanation": "`RANK` gives ties the same rank, then *skips*: a and b tie at 1, so c gets 3 (two rows precede it). `DENSE_RANK` wouldn't skip (c would get 2), and `ROW_NUMBER` would number them 1, 2, 3 breaking the tie arbitrarily."
+  },
+  {
+    "id": "pg-006",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "What does a CTE give you? E.g. `WITH recent AS (SELECT ...) SELECT ... FROM recent`",
+    "choices": [
+      "A named subquery you can reference (even multiple times) in the main query — great for readable, step-by-step logic; `WITH RECURSIVE` additionally unlocks hierarchical queries",
+      "A temporary table that persists for the rest of the session",
+      "A guaranteed speedup, because CTE results are always cached",
+      "A view that is stored permanently in the schema"
+    ],
+    "answer": 0,
+    "explanation": "A CTE is about clarity, not caching: since Postgres 12 they're usually inlined into the plan like any subquery. Session-persistent storage is a `TEMP TABLE`, and a stored named query is a `VIEW` — different objects. The killer feature is `WITH RECURSIVE` for trees/graphs (org charts, category trees)."
+  },
+  {
+    "id": "pg-007",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "predict",
+    "prompt": "What does this return?",
+    "code": "SELECT COALESCE(NULL, NULL, 'a', 'b');",
+    "lang": "sql",
+    "answers": ["a"],
+    "placeholder": "the value",
+    "explanation": "`COALESCE` returns its first non-NULL argument, left to right — here `'a'`. You'll use it constantly: `COALESCE(SUM(amount), 0)` to turn an empty aggregate into 0, or `COALESCE(nickname, name, 'anonymous')` for display fallbacks."
+  },
+  {
+    "id": "pg-008",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "What's the difference between `EXPLAIN` and `EXPLAIN ANALYZE` in Postgres?",
+    "choices": [
+      "`EXPLAIN` shows the planner's *estimated* plan without running the query; `EXPLAIN ANALYZE` actually executes it and reports real row counts and timings",
+      "`EXPLAIN ANALYZE` only refreshes the table's statistics",
+      "They're identical — `ANALYZE` just pretty-prints the output",
+      "`EXPLAIN` runs the query twice and averages the timings"
+    ],
+    "answer": 0,
+    "explanation": "Comparing *estimated* vs *actual* rows in `EXPLAIN ANALYZE` output is how you spot stale statistics (fix with `ANALYZE tablename`). Caution: `EXPLAIN ANALYZE` on an `INSERT`/`UPDATE`/`DELETE` really executes it — wrap it in `BEGIN; ... ROLLBACK;` when testing writes."
+  },
+  {
+    "id": "pg-009",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "You query a `JSONB` column with containment: `data @> '{\"plan\": \"pro\"}'`. Which index type makes this fast?",
+    "choices": [
+      "A **GIN** index on the jsonb column — GIN indexes what's *inside* composite values (jsonb, arrays, full-text)",
+      "A B-tree index on the jsonb column",
+      "A hash index on the jsonb column",
+      "No index type can help jsonb queries"
+    ],
+    "answer": 0,
+    "explanation": "B-tree (the default) handles equality/range on whole scalar values; it can't look inside a document. GIN is an inverted index mapping elements → rows, which is exactly what containment needs. If you only ever query one key, an expression B-tree index on `(data->>'plan')` also works and is smaller."
+  },
+  {
+    "id": "pg-010",
+    "topic": "postgres",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "A `jobs` table has millions of rows, but queries almost always hit `WHERE status = 'pending'` — a tiny fraction of rows. What's the idiomatic Postgres optimization?",
+    "choices": [
+      "A **partial index**: `CREATE INDEX ON jobs (created_at) WHERE status = 'pending'` — small, cheap to maintain, and used whenever the query's WHERE implies the predicate",
+      "A full index on `status` — low-cardinality columns are ideal index candidates",
+      "Rewrite the query as a CTE so the result gets cached",
+      "Increase `work_mem` until the sequential scan fits in memory"
+    ],
+    "answer": 0,
+    "explanation": "Indexing all rows of a 3-value `status` column mostly stores dead weight (millions of 'done' entries nobody queries). A partial index stores only the interesting slice, so it stays tiny and hot in cache. This is a classic job-queue pattern."
+  },
+  {
+    "id": "pg-011",
+    "topic": "postgres",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "Under Postgres's MVCC, what actually happens when you `UPDATE` a row — and why does `VACUUM` exist?",
+    "choices": [
+      "The update writes a **new row version**; the old one stays visible to concurrent readers and becomes a dead tuple once no transaction can see it — VACUUM reclaims that space (autovacuum runs it for you)",
+      "The row is changed in place, and readers block until the writer commits",
+      "The entire table is copied on every update",
+      "VACUUM compresses the table's disk pages on a nightly schedule"
+    ],
+    "answer": 0,
+    "explanation": "MVCC (multi-version concurrency control) is why readers don't block writers in Postgres: each transaction sees a consistent snapshot of row versions. The cost is that updates and deletes leave dead tuples behind, so heavily-updated tables bloat if vacuuming can't keep up."
+  },
+  {
+    "id": "pg-012",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "Postgres's default transaction isolation level is `READ COMMITTED`. What does that mean in practice?",
+    "choices": [
+      "Each *statement* sees data committed before that statement began — so two identical SELECTs in one transaction can return different results if another transaction commits in between",
+      "The whole transaction sees one frozen snapshot taken at its start",
+      "You can read other transactions' uncommitted changes",
+      "All transactions execute strictly one at a time"
+    ],
+    "answer": 0,
+    "explanation": "One-frozen-snapshot-per-transaction is `REPEATABLE READ`, the next level up. Dirty reads (seeing uncommitted data) never happen in Postgres at any level. `SERIALIZABLE` is the strictest — transactions behave as if run one-by-one, at the cost of possible serialization-failure retries."
+  },
+  {
+    "id": "pg-013",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "mc",
+    "prompt": "You want \"insert this row, or update it if the key already exists\" as one atomic statement. What's the Postgres idiom?",
+    "choices": [
+      "`INSERT INTO kv (k, v) VALUES ($1, $2) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`",
+      "SELECT first, then INSERT or UPDATE from application code — it's equivalent",
+      "`REPLACE INTO kv (k, v) VALUES ($1, $2)`",
+      "It's impossible in one statement; you need a stored procedure"
+    ],
+    "answer": 0,
+    "explanation": "Check-then-write from the app has a race: two concurrent requests can both see \"not there\" and both insert, and one dies on the unique constraint. `ON CONFLICT` (upsert) is atomic; `EXCLUDED` refers to the row you tried to insert. `REPLACE INTO` is MySQL. Use `DO NOTHING` for insert-if-absent."
+  },
+  {
+    "id": "pg-014",
+    "topic": "postgres",
+    "tier": 3,
+    "type": "mc",
+    "prompt": "Deep pagination (`ORDER BY created_at DESC LIMIT 20 OFFSET 100000`) is slow. Why, and what's the fix?",
+    "choices": [
+      "`OFFSET` still fetches and discards all 100,000 earlier rows; switch to **keyset pagination** — `WHERE (created_at, id) < (<last seen values>) ORDER BY created_at DESC, id DESC LIMIT 20`",
+      "The ORDER BY disables index use; remove it",
+      "LIMIT forces a sequential scan; raise the limit",
+      "Postgres caches offsets after the first read, so it's only slow once"
+    ],
+    "answer": 0,
+    "explanation": "OFFSET cost grows linearly with page depth because every skipped row is still produced. Keyset (a.k.a. cursor) pagination seeks straight to the last-seen position via the index — O(page size) per page — and stays stable when new rows are inserted between page loads. Include `id` as a tiebreaker so the sort order is deterministic."
+  },
+  {
+    "id": "pg-015",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "dsa",
+    "prompt": "Given `sales(day, amount)`, return each day, its amount, and the **running total** of amount ordered by day.",
+    "lang": "sql",
+    "reveal": {
+      "approach": "A window aggregate: `SUM(amount) OVER (ORDER BY day)` computes, for each row, the sum from the first row through the current one — no self-join needed. Window functions see the whole result set per-row without collapsing rows the way GROUP BY does.",
+      "code": "SELECT day,\n       amount,\n       SUM(amount) OVER (ORDER BY day) AS running_total\nFROM sales\nORDER BY day;",
+      "lang": "sql",
+      "complexity": "`O(n log n)` for the sort, then a single `O(n)` pass.",
+      "insight": "When `OVER` has an ORDER BY, the default frame is \"start through current row\" — exactly a running total. Add `PARTITION BY region` to restart the total per group. The pre-window-function way was a correlated subquery or self-join, which is O(n²)."
+    }
+  },
+  {
+    "id": "pg-016",
+    "topic": "postgres",
+    "tier": 3,
+    "type": "dsa",
+    "prompt": "Given `metrics(day, value)` with one row per day, return each day, its value, and the **change vs the previous day** (NULL for the first day).",
+    "lang": "sql",
+    "reveal": {
+      "approach": "`LAG(value) OVER (ORDER BY day)` fetches the previous row's value; subtract it from the current value. `LAG`/`LEAD` are offset window functions — the standard tool for row-vs-previous-row work (day-over-day deltas, detecting gaps, sessionization).",
+      "code": "SELECT day,\n       value,\n       value - LAG(value) OVER (ORDER BY day) AS change\nFROM metrics\nORDER BY day;",
+      "lang": "sql",
+      "complexity": "`O(n log n)` sort + `O(n)` pass.",
+      "insight": "`LAG` returns NULL when there's no previous row, and NULL propagates through subtraction — which handles the first day for free. `LAG(value, 7)` gives week-over-week. A self-join on `day - 1` breaks the moment a day is missing; LAG doesn't."
+    }
+  },
+  {
+    "id": "pg-017",
+    "topic": "postgres",
+    "tier": 2,
+    "type": "flashcard",
+    "prompt": "A production Postgres query that used to be fast is now slow. Walk through how you'd diagnose and fix it.",
+    "reveal": {
+      "points": [
+        "Reproduce and measure: run `EXPLAIN ANALYZE` (or `EXPLAIN (ANALYZE, BUFFERS)`) on the real query with real parameter values.",
+        "Read the plan: Seq Scans on big tables, nested loops over many rows, and estimated-vs-actual row counts that are wildly off (stale statistics → run `ANALYZE`).",
+        "Check indexes: is there one matching the filter/join/sort? Composite index in the right column order? Would a partial or expression index fit better?",
+        "Consider data growth: a plan that was fine at 10k rows can flip and fall off a cliff at 10M — \"used to be fast\" often just means \"used to be small\".",
+        "Check bloat/autovacuum health on heavily-updated tables, and use `pg_stat_statements` to confirm which queries actually dominate load.",
+        "Apply one fix, re-run `EXPLAIN ANALYZE`, and compare before/after."
+      ],
+      "trap": "Jumping straight to \"add an index\" without reading the plan. The real culprit may be stale stats, a leading-`%` LIKE, or a function wrapped around the indexed column — cases where a new index changes nothing."
+    }
+  }
+]

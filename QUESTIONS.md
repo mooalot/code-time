@@ -14,7 +14,7 @@ Questions live in `data/questions/<topic-id>.json` — one file per topic, a JSO
 | `dsa-arrays`    | `arr`  | `elixir`        | `elx`  |
 | `dsa-graphs`    | `grp`  | `go-python`     | `gop`  |
 | `complexity`    | `cpx`  | `ai-llm`        | `ai`   |
-|                 |        | `behavioral`    | `beh`  |
+| `postgres`      | `pg`   | `behavioral`    | `beh`  |
 
 ## Common fields (all questions)
 

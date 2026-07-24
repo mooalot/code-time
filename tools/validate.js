@@ -14,7 +14,7 @@ const PREFIX = {
   'frontend-css': 'css', 'web-platform': 'web', 'dsa-arrays': 'arr',
   'dsa-graphs': 'grp', 'complexity': 'cpx', 'implement': 'impl',
   'practical': 'prc', 'testing': 'test', 'system-design': 'sys',
-  'sql': 'sql', 'rails': 'rb', 'elixir': 'elx', 'go-python': 'gop',
+  'sql': 'sql', 'postgres': 'pg', 'rails': 'rb', 'elixir': 'elx', 'go-python': 'gop',
   'ai-llm': 'ai', 'behavioral': 'beh',
 };
 const TYPES = new Set(['mc', 'predict', 'dsa', 'flashcard']);

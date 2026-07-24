@@ -26,11 +26,11 @@ to box 0. XP, levels, and the daily streak are the carrot.
 
 ## Topics & companies
 
-19 topics grouped as: **JS/TS core** (js-core, async-js, typescript) ·
+20 topics grouped as: **JS/TS core** (js-core, async-js, typescript) ·
 **frontend** (react, frontend-css, web-platform) · **algorithms** (dsa-arrays,
 dsa-graphs, complexity) · **build-from-scratch** (implement) · **practical,
 testing & design** (practical, testing, system-design) · **backend/stack** (sql,
-rails, elixir, go-python) · **AI** (ai-llm) · **behavioral**.
+postgres, rails, elixir, go-python) · **AI** (ai-llm) · **behavioral**.
 
 Topics were chosen from a taxonomy audit of what these interviews actually cover:
 beyond the DSA/JS/React core, that means **CSS/layout & accessibility**,
